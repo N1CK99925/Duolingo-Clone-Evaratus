@@ -16,7 +16,12 @@ from app.services.seed import run_seed
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title=settings.app_name)
+    app = FastAPI(
+        title=settings.app_name,
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
 
     # Ensure schema exists (dev convenience; prod runs `alembic upgrade head`).
     init_db()
