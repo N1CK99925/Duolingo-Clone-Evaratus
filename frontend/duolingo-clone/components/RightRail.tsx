@@ -41,7 +41,7 @@ export function RightRail({ user }: { user: UserSummary | null }) {
         <div className="relative rounded-2xl border-2 border-[#E5E5E5] p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-2xl font-black italic tracking-wide bg-gradient-to-r from-[#F35EB3] via-[#9B5CF6] to-[#5A28B8] bg-clip-text text-transparent">
+              <div className="inline-block rounded-lg bg-gradient-to-r from-[#F35EB3] via-[#B44BF0] to-[#7B3BFF] px-2 py-0.5 text-xl font-black italic tracking-wide text-white">
                 SUPER
               </div>
               <h3 className="mt-1 font-extrabold text-[#4B4B4B]">Try Super for free</h3>
@@ -49,9 +49,9 @@ export function RightRail({ user }: { user: UserSummary | null }) {
                 No ads, personalized practice, and unlimited Legendary!
               </p>
             </div>
-            <img src="/assets/mascot/duo-happy.svg" alt="" className="h-20 w-20 shrink-0" />
+            <img src="/assets/mascot/Duolingo%20waving%20bird%20for%20learning%20purposes.svg" alt="Duo waving" className="h-24 w-24 shrink-0 object-contain" />
           </div>
-          <button className="mt-3 w-full rounded-xl bg-[#CE82FF] py-2.5 text-sm font-bold uppercase tracking-wide text-white shadow-[0_3px_0_#A560CC] active:translate-y-[2px] active:shadow-none">
+          <button className="mt-3 w-full rounded-xl bg-[#4945FF] py-2.5 text-sm font-bold uppercase tracking-wide text-white shadow-[0_3px_0_#3734C9] active:translate-y-[2px] active:shadow-none">
             Try 1 week free
           </button>
         </div>

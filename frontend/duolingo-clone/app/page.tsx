@@ -5,6 +5,7 @@ import { RightRail } from "@/components/RightRail";
 import { LearningPath } from "@/components/LearningPath";
 import { ChestIcon, PersonIcon } from "@/components/icons";
 import { api, SkillNode, UserSummary } from "@/lib/api";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 /* ── Mobile top bar: logo + compact stats (lg:hidden) ── */
@@ -58,6 +59,7 @@ function MobileFooter() {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [selectedSkill, setSelectedSkill] = useState<SkillNode | null>(null);
   const [user, setUser] = useState<UserSummary | null>(null);
 
@@ -66,8 +68,12 @@ export default function Home() {
   }, []);
 
   const handleSkillClick = (skill: SkillNode) => {
-    if (skill.state === "locked") return;
-    setSelectedSkill(skill);
+    if (skill.state !== "active") return;
+    if (skill.first_lesson_id != null) {
+      router.push(`/lesson?id=${skill.first_lesson_id}`);
+    } else {
+      setSelectedSkill(skill); // fallback: seed has no lessons yet
+    }
   };
 
   return (
@@ -94,7 +100,7 @@ export default function Home() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-[0_8px_0_#E5E5E5]">
             <h2 className="text-2xl font-extrabold text-[#4B4B4B]">{selectedSkill.title}</h2>
-            <p className="mt-2 text-[#777777]">Lesson player coming in VS2!</p>
+            <p className="mt-2 text-[#777777]">              Lesson content coming soon!</p>
             <button className="btn-primary mt-6 w-full" onClick={() => setSelectedSkill(null)}>
               Continue
             </button>

@@ -94,6 +94,12 @@ def get_path(db: Session, stop_at_incomplete: bool = True) -> PathResponse:
             lesson_count = db.execute(
                 select(func.count(Lesson.id)).where(Lesson.skill_id == skill.id)
             ).scalar_one()
+            first_lesson_id = db.execute(
+                select(Lesson.id)
+                .where(Lesson.skill_id == skill.id)
+                .order_by(Lesson.sort_order, Lesson.id)
+                .limit(1)
+            ).scalar()
             completed = progress.get(skill.id, {}).get("lessons_completed", 0)
 
             if completed >= lesson_count:
@@ -116,6 +122,7 @@ def get_path(db: Session, stop_at_incomplete: bool = True) -> PathResponse:
                     crown_level=2 if completed else 0,  # placeholder crown for completed
                     lessons_completed=completed,
                     lesson_count=lesson_count,
+                    first_lesson_id=first_lesson_id,
                 )
             )
 

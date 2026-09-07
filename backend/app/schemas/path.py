@@ -31,6 +31,8 @@ class SkillNode(BaseModel):
     crown_level: int
     lessons_completed: int
     lesson_count: int
+    # First lesson in the skill (VS2: the lesson the path opens on click).
+    first_lesson_id: int | None = None
 
 
 class UnitNode(BaseModel):

@@ -82,14 +82,15 @@ export function LearningPath({ onSkillClick }: LearningPathProps) {
                   <SkillNodeComponent skill={skill} onClick={() => onSkillClick(skill)} />
                   {skill.state === "active" && (
                     <img
-                      src="/assets/mascot/duo-happy.svg"
-                      alt="Duo"
-                      className="bob absolute left-full -top-2 ml-10 h-24 hidden lg:block"
+                      src="/assets/mascot/Duolingo%20waving%20bird%20for%20learning%20purposes.svg"
+                      alt="Duo waving"
+                      className="absolute left-full -top-10 ml-2 object-contain pointer-events-none select-none"
+                      style={{ height: "160px", width: "160px", maxWidth: "none" }}
                     />
                   )}
                 </div>
                 {skillIdx === 1 && unit.skills.length >= 3 && (
-                  <ChestIcon className="mt-9 h-14 w-14 drop-shadow-[0_6px_0_rgba(0,0,0,0.08)]" />
+                  <ChestIcon className="mt-9 h-20 w-20 drop-shadow-[0_6px_0_rgba(0,0,0,0.08)]" />
                 )}
               </div>
             ))}
@@ -118,7 +119,7 @@ function UnitBanner({ unit, unitNumber }: { unit: UnitNode; unitNumber: number }
           {topicOf(unit.title)}
         </h2>
       </div>
-      <button className="flex items-center gap-2 shrink-0 rounded-xl border-2 border-white/40 bg-white/10 px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-white hover:bg-white/20">
+      <button className="flex items-center gap-2 shrink-0 rounded-xl bg-white px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#58CC02] shadow-[0_3px_0_rgba(0,0,0,0.15)] hover:bg-[#F7F7F7]">
         <GuidebookIcon className="h-5 w-5" />
         <span className="hidden sm:inline">Guidebook</span>
       </button>

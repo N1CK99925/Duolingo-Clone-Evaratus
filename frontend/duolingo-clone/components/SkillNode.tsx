@@ -1,7 +1,6 @@
 "use client";
 
 import { SkillNode } from "@/lib/api";
-import { StarIcon } from "./icons";
 
 interface SkillNodeProps {
   skill: SkillNode;
@@ -41,9 +40,12 @@ function ProgressRing({ progress }: { progress: number }) {
 /** START bubble above the active node. */
 function StartChip() {
   return (
-    <span className="absolute -top-[52px] left-1/2 -translate-x-1/2 bg-white px-4 py-1.5 rounded-xl text-[13px] font-extrabold uppercase tracking-wide text-[#58CC02] whitespace-nowrap shadow-[0_3px_0_#E5E5E5]">
-      Start
-    </span>
+    <>
+      <span className="absolute -top-[52px] left-1/2 -translate-x-1/2 bg-white px-4 py-1.5 rounded-xl text-[13px] font-extrabold uppercase tracking-wide text-[#58CC02] whitespace-nowrap shadow-[0_3px_0_#E5E5E5]">
+        Start
+      </span>
+      <span className="absolute -top-[26px] left-1/2 -translate-x-1/2 h-3 w-3 rotate-45 rounded-[2px] bg-white" />
+    </>
   );
 }
 
@@ -55,17 +57,17 @@ export function SkillNodeComponent({ skill, onClick }: SkillNodeProps) {
   const progress = skill.lesson_count > 0 ? Math.min(skill.lessons_completed / skill.lesson_count, 1) : 0;
 
   const disc = isActive
-    ? "bg-[#58CC02] shadow-[0_8px_0_#46A302]"
+    ? "bg-[#58CC02] shadow-[0_8px_0_#46A302] active:shadow-[0_2px_0_#46A302] active:translate-y-[6px]"
     : isCompleted
-      ? "bg-[#FFC800] shadow-[0_8px_0_#E6A800]"
-      : "bg-[#E5E5E5] shadow-[0_8px_0_#C8C8C8]";
+      ? "bg-[#FFC800] shadow-[0_8px_0_#E6A800] active:shadow-[0_2px_0_#E6A800] active:translate-y-[6px]"
+      : "bg-[#E5E5E5] shadow-[0_8px_0_#C8C8C8] active:shadow-[0_2px_0_#C8C8C8] active:translate-y-[6px]";
 
   return (
     <button
       onClick={isLocked ? undefined : onClick}
       disabled={isLocked}
       aria-label={`${skill.title}: ${skill.state}`}
-      className="relative flex flex-col items-center group"
+      className="relative flex flex-col items-center group cursor-pointer disabled:cursor-not-allowed outline-none"
     >
       {isActive && (
         <>
@@ -74,12 +76,18 @@ export function SkillNodeComponent({ skill, onClick }: SkillNodeProps) {
         </>
       )}
       <span
-        className={`flex items-center justify-center rounded-full transition-transform duration-100 group-active:translate-y-[4px] group-active:shadow-none ${
+        className={`flex items-center justify-center rounded-full transition-all duration-75 select-none ${
           isActive ? "h-[72px] w-[72px]" : "h-[68px] w-[68px]"
         } ${disc}`}
       >
-        <StarIcon
-          className={isActive || isCompleted ? "h-8 w-8 text-white" : "h-8 w-8 text-[#FAFAFA]"}
+        <img
+          src={
+            isActive || isCompleted
+              ? "/assets/icons/STAR_COMPLETE.svg"
+              : "/assets/icons/STAR_INCOMPLETE.svg"
+          }
+          alt=""
+          className={`h-8 w-8 ${isActive || isCompleted ? "brightness-0 invert" : ""}`}
         />
       </span>
     </button>
