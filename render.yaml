@@ -1,6 +1,7 @@
 # Render blueprint for the backend API service (Docker).
 # Use: Render Dashboard -> New -> Blueprint -> pick this repo.
-# After the app is live, edit DUO_CORS_ORIGINS to include your real Vercel URL.
+# Frontend (Vercel) talks to the API same-origin via vercel.json rewrites, so no
+# Vercel origin is needed here. Localhost listed for local dev only.
 services:
   - type: web
     name: duo-backend
@@ -11,8 +12,9 @@ services:
     autoDeploy: true
     envVars:
       - key: DUO_CORS_ORIGINS
-        value: http://localhost:3000,https://duo-frontend.vercel.app
-      # Optional: keep the demo DB across restarts (Render persistent disk, paid).
+        value: http://localhost:3000,http://127.0.0.1:3000
+      # If you switch to direct cross-origin calls (NEXT_PUBLIC_BACKEND_URL set on
+      # Vercel), add the Vercel URL here instead.
       # - key: DUO_DATABASE_URL
       #   value: sqlite:////var/data/duolingo.db
     # disk:
