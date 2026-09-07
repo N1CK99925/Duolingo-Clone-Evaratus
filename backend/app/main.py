@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db import SessionLocal, init_db
 from app.routers.core import router as core_router
+from app.routers.gamification import router as gamification_router
 from app.routers.lessons import router as lessons_router
 from app.services.seed import run_seed
 
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(core_router)
+    app.include_router(gamification_router)
     app.include_router(lessons_router)
 
 

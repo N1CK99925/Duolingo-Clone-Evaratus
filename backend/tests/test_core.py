@@ -55,9 +55,9 @@ def test_path_hierarchical_order(client):
     ]
 
     # First unit: Duolingo labels the alphabet skill in Devanagari and the
-    # topic skills in English (Basics, Intro).
+    # topic skills with their English course names (Basics 1, Intro).
     first_unit_skills = [s["title"] for s in body["units"][0]["skills"]]
-    assert first_unit_skills == ["अक्षर", "Basics", "परिचय"]
+    assert first_unit_skills == ["अक्षर", "Basics 1", "Intro"]
 
 
 def test_seed_is_idempotent(client, db_engine):
@@ -79,5 +79,5 @@ def test_seed_is_idempotent(client, db_engine):
         skills = session.execute(select(func.count(Skill.id))).scalar_one()
 
     assert courses == 1
-    assert users == 1
+    assert users == 10  # default learner + 9 seeded leaderboard rivals
     assert skills == 7

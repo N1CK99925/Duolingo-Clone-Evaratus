@@ -18,7 +18,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.course import Course, Exercise, Lesson, Skill, Unit
-from app.models.gamification import Hearts, Streak
+from app.models.gamification import Achievement, DailyGoal, Hearts, LeaderboardEntry, Streak
 from app.models.user import User
 
 # --- Course content: Hindi for English speakers (Duolingo Section 1 shape) ---
@@ -39,18 +39,17 @@ UNITS = [
         "description": "Read the script and say your first words",
         "skills": [
             {
-                "title": "\u0905\u0915\u094d\u0937\u0930",  # Letters 1
+                "title": "\u0905\u0915\u094d\u0937\u0930",  # Letters 1 (Devanagari: script skill)
                 "description": "Pair letters with sounds",
                 "sort_order": 0,
             },
             {
-                "title": "\u092casics",  # Basics 1: English label
-                "title_en": "Basics",
+                "title": "Basics 1",
                 "description": "Form basic sentences",
                 "sort_order": 1,
             },
             {
-                "title": "\u092a\u0930\u093f\u091a\u092f",  # Intro
+                "title": "Intro",
                 "description": "Introduce people",
                 "sort_order": 2,
             },
@@ -61,12 +60,12 @@ UNITS = [
         "description": "Talk about family, friends and pets",
         "skills": [
             {
-                "title": "\u092a\u0930\u093f\u0935\u093e\u0930",  # Family
+                "title": "Family",
                 "description": "Describe your family",
                 "sort_order": 0,
             },
             {
-                "title": "\u091c\u093e\u0928\u0935\u0930",  # Animals
+                "title": "Animals",
                 "description": "Talk about animals",
                 "sort_order": 1,
             },
@@ -77,12 +76,12 @@ UNITS = [
         "description": "Order food and use numbers",
         "skills": [
             {
-                "title": "\u092d\u094b\u091c\u0928",  # Food
+                "title": "Food",
                 "description": "Talk about food",
                 "sort_order": 0,
             },
             {
-                "title": "\u0938\u0902\u0916\u094d\u092f\u093e\u090f\u0901",  # Numbers
+                "title": "Numbers",
                 "description": "Use numbers",
                 "sort_order": 1,
             },
@@ -94,10 +93,10 @@ UNITS = [
 def _skill_title(skill_data: dict) -> str:
     """Return the display title for a skill.
 
-    Duolingo keeps the alphabet skills in Devanagari and the topic skills in
-    English; we mimic that: prefer a Hindi title, fall back to the English one.
+    Only the alphabet-skills (Letters) are in Devanagari; everything else
+    is in English, matching the real Duolingo Hindi course labels.
     """
-    return skill_data.get("title_en") or skill_data["title"]
+    return skill_data["title"]
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +134,7 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
         },
     ],
     # Basics
-    "Basics": [
+    "Basics 1": [
         {
             "type": "multiple_choice",
             "prompt": "How do you say 'Hello' in Hindi?",
@@ -146,13 +145,20 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
                 "\u0939\u093e\u0901 (Yes)",
             ],
             "correct_index": 0,
-            "explanation": "'\u0928\u092e\u0938\u094d\u0924\u0947' (Namaste) is the common Hindi greeting.",
+            "explanation": (
+                "'\u0928\u092e\u0938\u094d\u0924\u0947' (Namaste) is the common Hindi greeting."
+            ),
         },
         {
             "type": "fill_blank",
             "sentence": "___ (Paani) means water in Hindi.",
             "prompt": "Fill in the blank:",
-            "choices": ["\u092a\u093e\u0928\u0940", "\u091a\u093e\u092f", "\u0926\u0942\u0927", "\u092b\u0932"],
+            "choices": [
+                "\u092a\u093e\u0928\u0940",
+                "\u091a\u093e\u092f",
+                "\u0926\u0942\u0927",
+                "\u092b\u0932",
+            ],
             "correct_index": 0,
             "explanation": "'\u092a\u093e\u0928\u0940' (Paani) means water.",
         },
@@ -167,8 +173,8 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
             ],
         },
     ],
-    # \u092a\u0930\u093f\u091a\u092f = Intro
-    "\u092a\u0930\u093f\u091a\u092f": [
+    # Intro
+    "Intro": [
         {
             "type": "multiple_choice",
             "prompt": "How do you say 'My name is...' in Hindi?",
@@ -179,7 +185,10 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
                 "\u0906\u092a \u0915\u0948\u0938\u0947 \u0939\u0948\u0902 (Aap kaise hain)",
             ],
             "correct_index": 0,
-            "explanation": "'\u092e\u0947\u0930\u093e \u0928\u093e\u092e... \u0939\u0948' is used to introduce yourself.",
+            "explanation": (
+                "'\u092e\u0947\u0930\u093e \u0928\u093e\u092e... \u0939\u0948' is used "
+                "to introduce yourself."
+            ),
         },
         {
             "type": "fill_blank",
@@ -200,12 +209,17 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
             ],
         },
     ],
-    # \u092a\u0930\u093f\u0935\u093e\u0930 = Family
-    "\u092a\u0930\u093f\u0935\u093e\u0930": [
+    # Family
+    "Family": [
         {
             "type": "multiple_choice",
             "prompt": "How do you say 'Mother' in Hindi?",
-            "choices": ["\u092e\u093e\u0901 (Maa)", "\u092a\u093f\u0924\u093e\u091c\u0940 (Pitaji)", "\u092d\u093e\u0908 (Bhai)", "\u092c\u0939\u0928 (Behen)"],
+            "choices": [
+                "\u092e\u093e\u0901 (Maa)",
+                "\u092a\u093f\u0924\u093e\u091c\u0940 (Pitaji)",
+                "\u092d\u093e\u0908 (Bhai)",
+                "\u092c\u0939\u0928 (Behen)",
+            ],
             "correct_index": 0,
             "explanation": "'\u092e\u093e\u0901' (Maa) means mother.",
         },
@@ -213,7 +227,12 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
             "type": "fill_blank",
             "sentence": "My ___ (Bhai) is my brother.",
             "prompt": "Fill in the blank:",
-            "choices": ["\u092d\u093e\u0908", "\u092c\u0939\u0928", "\u092e\u093e\u0901", "\u092a\u093f\u0924\u093e\u091c\u0940"],
+            "choices": [
+                "\u092d\u093e\u0908",
+                "\u092c\u0939\u0928",
+                "\u092e\u093e\u0901",
+                "\u092a\u093f\u0924\u093e\u091c\u0940",
+            ],
             "correct_index": 0,
             "explanation": "'\u092d\u093e\u0908' (Bhai) means brother.",
         },
@@ -228,12 +247,17 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
             ],
         },
     ],
-    # \u091c\u093e\u0928\u0935\u0930 = Animals
-    "\u091c\u093e\u0928\u0935\u0930": [
+    # Animals
+    "Animals": [
         {
             "type": "multiple_choice",
             "prompt": "What is the Hindi word for 'Dog'?",
-            "choices": ["\u0915\u0941\u0924\u094d\u0924\u093e (Kutta)", "\u092c\u093f\u0932\u094d\u0932\u0940 (Billi)", "\u0917\u093e\u092f (Gaay)", "\u0918\u094b\u0921\u093c\u093e (Ghoda)"],
+            "choices": [
+                "\u0915\u0941\u0924\u094d\u0924\u093e (Kutta)",
+                "\u092c\u093f\u0932\u094d\u0932\u0940 (Billi)",
+                "\u0917\u093e\u092f (Gaay)",
+                "\u0918\u094b\u0921\u093c\u093e (Ghoda)",
+            ],
             "correct_index": 0,
             "explanation": "'\u0915\u0941\u0924\u094d\u0924\u093e' (Kutta) means dog.",
         },
@@ -241,7 +265,12 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
             "type": "fill_blank",
             "sentence": "___ (Billi) is the Hindi word for cat.",
             "prompt": "Fill in the blank:",
-            "choices": ["\u092c\u093f\u0932\u094d\u0932\u0940", "\u0915\u0941\u0924\u094d\u0924\u093e", "\u0917\u093e\u092f", "\u0918\u094b\u0921\u093c\u093e"],
+            "choices": [
+                "\u092c\u093f\u0932\u094d\u0932\u0940",
+                "\u0915\u0941\u0924\u094d\u0924\u093e",
+                "\u0917\u093e\u092f",
+                "\u0918\u094b\u0921\u093c\u093e",
+            ],
             "correct_index": 0,
             "explanation": "'\u092c\u093f\u0932\u094d\u0932\u0940' (Billi) means cat.",
         },
@@ -256,8 +285,8 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
             ],
         },
     ],
-    # \u092d\u094b\u091c\u0928 = Food
-    "\u092d\u094b\u091c\u0928": [
+    # Food
+    "Food": [
         {
             "type": "multiple_choice",
             "prompt": "What does '\u0930\u094b\u091f\u0940' (Roti) mean?",
@@ -269,7 +298,12 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
             "type": "fill_blank",
             "sentence": "___ (Chawal) is the Hindi word for rice.",
             "prompt": "Fill in the blank:",
-            "choices": ["\u091a\u093e\u0935\u0932", "\u0930\u094b\u091f\u0940", "\u0926\u093e\u0932", "\u0938\u092c\u094d\u091c\u0940"],
+            "choices": [
+                "\u091a\u093e\u0935\u0932",
+                "\u0930\u094b\u091f\u0940",
+                "\u0926\u093e\u0932",
+                "\u0938\u092c\u094d\u091c\u0940",
+            ],
             "correct_index": 0,
             "explanation": "'\u091a\u093e\u0935\u0932' (Chawal) means rice.",
         },
@@ -284,8 +318,8 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
             ],
         },
     ],
-    # \u0938\u0902\u0916\u094d\u092f\u093e\u090f\u0901 = Numbers
-    "\u0938\u0902\u0916\u094d\u092f\u093e\u090f\u0901": [
+    # Numbers
+    "Numbers": [
         {
             "type": "multiple_choice",
             "prompt": "What is '\u090f\u0915' (Ek) in English?",
@@ -297,7 +331,12 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
             "type": "fill_blank",
             "sentence": "___ (Do) means two in Hindi.",
             "prompt": "Fill in the blank:",
-            "choices": ["\u0926\u094b", "\u0924\u0940\u0928", "\u091a\u093e\u0930", "\u092a\u093e\u0901\u091a"],
+            "choices": [
+                "\u0926\u094b",
+                "\u0924\u0940\u0928",
+                "\u091a\u093e\u0930",
+                "\u092a\u093e\u0901\u091a",
+            ],
             "correct_index": 0,
             "explanation": "'\u0926\u094b' (Do) means two.",
         },
@@ -314,11 +353,80 @@ SKILL_EXERCISES: dict[str, list[dict]] = {
     ],
 }
 
+# Rival learners that make the weekly leaderboard competitive (VS4).
+# weekly_xp doubles as their all-time total so the denormalized counters stay coherent.
+LEADERBOARD_RIVALS: list[dict] = [
+    {"username": "PriyaS", "weekly_xp": 340},
+    {"username": "ArjunK", "weekly_xp": 285},
+    {"username": "Meera_R", "weekly_xp": 240},
+    {"username": "Rahul99", "weekly_xp": 180},
+    {"username": "AnanyaT", "weekly_xp": 150},
+    {"username": "VikramV", "weekly_xp": 95},
+    {"username": "SanaM", "weekly_xp": 60},
+    {"username": "DevP", "weekly_xp": 30},
+    {"username": "IshaB", "weekly_xp": 15},
+]
+
+
+DEFAULT_ACHIEVEMENTS: list[dict] = [
+    {
+        "key": "first_lesson",
+        "title": "First Steps",
+        "description": "Complete your first lesson",
+        "icon": "🌱",
+        "goal": 1,
+        "progress": 0,
+        "unlocked_at": None,
+    },
+    {
+        "key": "xp_100",
+        "title": "Getting Started",
+        "description": "Earn 100 total XP",
+        "icon": "✨",
+        "goal": 100,
+        "progress": 0,
+        "unlocked_at": None,
+    },
+    {
+        "key": "streak_7",
+        "title": "Week Warrior",
+        "description": "Maintain a 7-day streak",
+        "icon": "🔥",
+        "goal": 7,
+        "progress": 0,
+        "unlocked_at": None,
+    },
+    {
+        "key": "gem_collector",
+        "title": "Gem Collector",
+        "description": "Earn 500 gems total",
+        "icon": "💎",
+        "goal": 500,
+        "progress": 0,
+        "unlocked_at": None,
+    },
+]
+
+
+def _current_week_str() -> str:
+    """Return current week start (Monday) as YYYY-MM-DD."""
+    from datetime import datetime, timedelta
+
+    today = datetime.utcnow().date()
+    monday = today - timedelta(days=today.weekday())
+    return monday.isoformat()
+
+
 DEFAULT_EXERCISES: list[dict] = [
     {
         "type": "multiple_choice",
         "prompt": "Select the correct Hindi word:",
-        "choices": ["\u0928\u092e\u0938\u094d\u0924\u0947", "\u0939\u093e\u0901", "\u0928\u0939\u0940\u0902", "\u092a\u093e\u0928\u0940"],
+        "choices": [
+            "\u0928\u092e\u0938\u094d\u0924\u0947",
+            "\u0939\u093e\u0901",
+            "\u0928\u0939\u0940\u0902",
+            "\u092a\u093e\u0928\u0940",
+        ],
         "correct_index": 0,
         "explanation": "Correct choice selected.",
     },
@@ -326,7 +434,12 @@ DEFAULT_EXERCISES: list[dict] = [
         "type": "fill_blank",
         "sentence": "___ means hello in Hindi.",
         "prompt": "Fill in the blank:",
-        "choices": ["\u0928\u092e\u0938\u094d\u0924\u0947", "\u0939\u093e\u0901", "\u0928\u0939\u0940\u0902", "\u092a\u093e\u0928\u0940"],
+        "choices": [
+            "\u0928\u092e\u0938\u094d\u0924\u0947",
+            "\u0939\u093e\u0901",
+            "\u0928\u0939\u0940\u0902",
+            "\u092a\u093e\u0928\u0940",
+        ],
         "correct_index": 0,
         "explanation": "'\u0928\u092e\u0938\u094d\u0924\u0947' (Namaste) means hello.",
     },
@@ -425,18 +538,85 @@ def seed_content(session: Session) -> Course:
 
 
 def seed_user(session: Session, username: str) -> User:
-    """Get or create the default learner."""
+    """Get or create the default learner, seeding gamification tables if absent."""
+    from datetime import datetime as _dt
+
     user = session.execute(select(User).where(User.username == username)).scalar_one_or_none()
-    if user:
-        return user
+    if user is None:
+        user = User(username=username, total_xp=0, gems=0)
+        session.add(user)
+        session.flush()
 
-    user = User(username=username, total_xp=0, gems=0)
-    session.add(user)
-    session.flush()
+        session.add(Streak(user_id=user.id))
+        session.add(Hearts(user_id=user.id))
 
-    session.add(Streak(user_id=user.id))
-    session.add(Hearts(user_id=user.id))
+    # Daily goal
+    daily = session.execute(
+        select(DailyGoal).where(DailyGoal.user_id == user.id)
+    ).scalar_one_or_none()
+    if daily is None:
+        daily = DailyGoal(user_id=user.id, target_xp=50, xp_today=0)
+        daily.created_at = _dt.utcnow()
+        daily.updated_at = _dt.utcnow()
+        session.add(daily)
+
+    # Leaderboard entry for current week
+    week_str = _current_week_str()
+    if session.execute(
+        select(LeaderboardEntry).where(
+            LeaderboardEntry.user_id == user.id,
+            LeaderboardEntry.week_start == week_str,
+        )
+    ).scalar_one_or_none() is None:
+        lb = LeaderboardEntry(user_id=user.id, weekly_xp=0, week_start=week_str)
+        lb.created_at = _dt.utcnow()
+        session.add(lb)
+
+    # Achievements
+    existing_ach_keys = {
+        row for row in session.execute(
+            select(Achievement.key).where(Achievement.user_id == user.id)
+        ).scalars().all()
+    }
+    for ach_data in DEFAULT_ACHIEVEMENTS:
+        if ach_data["key"] not in existing_ach_keys:
+            ach = Achievement(user_id=user.id, **ach_data)
+            ach.created_at = _dt.utcnow()
+            session.add(ach)
+
     return user
+
+
+def seed_leaderboard_rivals(session: Session) -> None:
+    """Seed rival learners + their current-week leaderboard entries. Idempotent."""
+    from datetime import datetime as _dt
+
+    week_str = _current_week_str()
+    for rival in LEADERBOARD_RIVALS:
+        user = session.execute(
+            select(User).where(User.username == rival["username"])
+        ).scalar_one_or_none()
+        if user is None:
+            user = User(
+                username=rival["username"],
+                total_xp=rival["weekly_xp"],
+                gems=rival["weekly_xp"] // 10,
+            )
+            session.add(user)
+            session.flush()
+
+        entry = session.execute(
+            select(LeaderboardEntry).where(
+                LeaderboardEntry.user_id == user.id,
+                LeaderboardEntry.week_start == week_str,
+            )
+        ).scalar_one_or_none()
+        if entry is None:
+            lb = LeaderboardEntry(
+                user_id=user.id, weekly_xp=rival["weekly_xp"], week_start=week_str
+            )
+            lb.created_at = _dt.utcnow()
+            session.add(lb)
 
 
 def run_seed(session: Session) -> None:
@@ -445,4 +625,6 @@ def run_seed(session: Session) -> None:
     from app.core.config import settings
 
     seed_user(session, settings.default_username)
+    seed_leaderboard_rivals(session)
+    session.flush()
     session.commit()

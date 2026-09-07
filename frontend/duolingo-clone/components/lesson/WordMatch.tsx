@@ -5,7 +5,7 @@ import { AnswerResult, ExerciseDetail, WordMatchData, WordPair } from "@/lib/api
 
 interface WordMatchProps {
   exercise: ExerciseDetail;
-  selected: any;
+  selected?: unknown;
   feedback: AnswerResult | null;
   onSelect: (matches: Record<string, string>) => void;
 }
@@ -26,9 +26,13 @@ export function WordMatch({
   const [userPairs, setUserPairs] = useState<Record<string, string>>({});
   const [matchedPairs, setMatchedPairs] = useState<string[]>([]);
 
-  // Derive columns
+  // Derive columns: left column matches seed order, right column is shuffled
   const leftItems = (data.pairs || []).map((p: WordPair) => p.hindi);
-  const rightItems = (data.pairs || []).map((p: WordPair) => p.english);
+  const [rightItems] = useState<string[]>(() => {
+    const rights = (data.pairs || []).map((p: WordPair) => p.english);
+    // Simple deterministic shuffle array
+    return [...rights].sort(() => Math.random() - 0.5);
+  });
 
   const handleLeftClick = (item: string) => {
     if (matchedPairs.includes(item) || feedback) return;

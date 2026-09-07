@@ -1,7 +1,7 @@
 """Service functions for lesson player, exercise submission, and completion (VS2/VS3)."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import func, select
@@ -9,13 +9,19 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models.course import Exercise, Lesson, Skill
-from app.models.gamification import ExerciseResponse, Hearts, Streak, XpLog
+from app.models.gamification import ExerciseResponse, Hearts, XpLog
 from app.models.user import User, UserProgress
 from app.schemas.lesson import (
     AnswerSubmitResponse,
     ExerciseDetail,
     LessonCompleteResponse,
     LessonDetail,
+)
+from app.services.gamification import (
+    add_weekly_xp,
+    record_daily_xp,
+    update_achievements,
+    update_streak,
 )
 
 
@@ -175,6 +181,7 @@ def complete_lesson(db: Session, user_id: int, lesson_id: int) -> LessonComplete
     xp_amount = lesson.xp_reward
     user.total_xp += xp_amount
     db.add(XpLog(user_id=user.id, amount=xp_amount, source="lesson_complete"))
+    add_weekly_xp(db, user_id, xp_amount)
 
     # 2. Update per-lesson progress
     existing_progress = db.execute(
@@ -254,27 +261,10 @@ def complete_lesson(db: Session, user_id: int, lesson_id: int) -> LessonComplete
         skill_aggregate.last_practiced = now
         skill_aggregate.updated_at = now
 
-    # 3. Update Streak
-    streak = db.execute(select(Streak).where(Streak.user_id == user_id)).scalar_one_or_none()
-    if not streak:
-        streak = Streak(user_id=user_id)
-        db.add(streak)
-
-    today_str = now.strftime("%Y-%m-%d")
-    yesterday_str = (now - timedelta(days=1)).strftime("%Y-%m-%d")
-
-    if streak.last_practice_date == today_str:
-        pass  # already logged today
-    elif streak.last_practice_date == yesterday_str:
-        streak.current_streak += 1
-        streak.last_practice_date = today_str
-    else:
-        streak.current_streak = 1
-        streak.last_practice_date = today_str
-
-    if streak.current_streak > streak.longest_streak:
-        streak.longest_streak = streak.current_streak
-    streak.updated_at = now
+    # 3. Gamification: streak, daily goal progress, achievements
+    streak = update_streak(db, user_id, now)
+    record_daily_xp(db, user_id, xp_amount, now)
+    update_achievements(db, user, now)
 
     db.commit()
     db.refresh(user)

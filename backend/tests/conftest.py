@@ -12,6 +12,7 @@ from sqlalchemy.pool import StaticPool
 os.environ["DUO_DATABASE_URL"] = "sqlite://"
 os.environ["DUO_INFINITE_HEARTS"] = "false"
 
+import app.models  # noqa: E402
 from app.db import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.services.seed import run_seed  # noqa: E402
@@ -48,3 +49,12 @@ def client(db_engine):
     app.dependency_overrides[get_db] = override_get_db
     yield TestClient(app)
     app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def db_session(db_engine):
+    """Direct DB session on the shared in-memory engine, fully seeded."""
+    TestingSession = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
+    with TestingSession() as session:
+        run_seed(session)
+        yield session

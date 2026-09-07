@@ -29,7 +29,7 @@ function LessonPlayer() {
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
   const [idx, setIdx] = useState(0);
   const [hearts, setHearts] = useState(5);
-  const [selected, setSelected] = useState<any>(null);
+  const [selected, setSelected] = useState<number | Record<string, string> | null>(null);
   const [feedback, setFeedback] = useState<AnswerResult | null>(null);
   const [result, setResult] = useState<LessonCompleteResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -113,10 +113,10 @@ function LessonPlayer() {
   /* Keyboard: number keys pick options (for multiple_choice / fill_blank), Enter checks/continues. */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      let data: any = {};
+      let data: { choices?: string[]; options?: string[] } = {};
       try {
         data = typeof exercise?.exercise_data === "string" ? JSON.parse(exercise.exercise_data) : exercise?.exercise_data || {};
-      } catch (err) {}
+      } catch {}
       const choices = data.choices || data.options || [];
       const count = choices.length;
       const n = Number.parseInt(e.key, 10);
@@ -169,7 +169,7 @@ function LessonPlayer() {
           {exercise.exercise_type === "fill_blank" ? (
             <FillBlank
               exercise={exercise}
-              selected={selected}
+              selected={typeof selected === "number" ? selected : null}
               feedback={feedback}
               onSelect={(i) => {
                 if (!feedback) setSelected(i);
@@ -187,7 +187,7 @@ function LessonPlayer() {
           ) : (
             <MultipleChoice
               exercise={exercise}
-              selected={selected}
+              selected={typeof selected === "number" ? selected : null}
               feedback={feedback}
               onSelect={(i) => {
                 if (!feedback) setSelected(i);

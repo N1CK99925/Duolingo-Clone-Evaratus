@@ -11,7 +11,7 @@ interface MultipleChoiceProps {
 
 /** Multiple-choice exercise: prompt + chunky option cards with Duolingo answer states. */
 export function MultipleChoice({ exercise, selected, feedback, onSelect }: MultipleChoiceProps) {
-  let data: any = {};
+  let data: { prompt?: string; choices?: string[]; correct_index?: number } = {};
   try {
     data = typeof exercise.exercise_data === "string" ? JSON.parse(exercise.exercise_data) : exercise.exercise_data;
   } catch (e) {
