@@ -7,6 +7,9 @@ skill name Duolingo uses. Descriptions stay English (UI language).
 
 Idempotent: safe to run on every startup. If content already exists, it is
 left untouched (no duplicates introduced).
+
+VS3: Exercise templates now include multiple_choice, fill_blank, and word_match types.
+No audio exercises are seeded (audio infrastructure TBD).
 """
 
 import json
@@ -32,54 +35,54 @@ from app.models.user import User
 
 UNITS = [
     {
-        "title": "Unit 1 — Letters & Basics",
+        "title": "Unit 1 \u2014 Letters & Basics",
         "description": "Read the script and say your first words",
         "skills": [
             {
-                "title": "अक्षर",  # Letters 1
+                "title": "\u0905\u0915\u094d\u0937\u0930",  # Letters 1
                 "description": "Pair letters with sounds",
                 "sort_order": 0,
             },
             {
-                "title": "बasics",  # Basics 1: English label, Duolingo labels this skill in English
+                "title": "\u092casics",  # Basics 1: English label
                 "title_en": "Basics",
                 "description": "Form basic sentences",
                 "sort_order": 1,
             },
             {
-                "title": "परिचय",  # Intro
+                "title": "\u092a\u0930\u093f\u091a\u092f",  # Intro
                 "description": "Introduce people",
                 "sort_order": 2,
             },
         ],
     },
     {
-        "title": "Unit 2 — People & Animals",
+        "title": "Unit 2 \u2014 People & Animals",
         "description": "Talk about family, friends and pets",
         "skills": [
             {
-                "title": "परिवार",  # Family
+                "title": "\u092a\u0930\u093f\u0935\u093e\u0930",  # Family
                 "description": "Describe your family",
                 "sort_order": 0,
             },
             {
-                "title": "जानवर",  # Animals
+                "title": "\u091c\u093e\u0928\u0935\u0930",  # Animals
                 "description": "Talk about animals",
                 "sort_order": 1,
             },
         ],
     },
     {
-        "title": "Unit 3 — Food & Numbers",
+        "title": "Unit 3 \u2014 Food & Numbers",
         "description": "Order food and use numbers",
         "skills": [
             {
-                "title": "भोजन",  # Food
+                "title": "\u092d\u094b\u091c\u0928",  # Food
                 "description": "Talk about food",
                 "sort_order": 0,
             },
             {
-                "title": "संख्याएँ",  # Numbers
+                "title": "\u0938\u0902\u0916\u094d\u092f\u093e\u090f\u0901",  # Numbers
                 "description": "Use numbers",
                 "sort_order": 1,
             },
@@ -97,98 +100,245 @@ def _skill_title(skill_data: dict) -> str:
     return skill_data.get("title_en") or skill_data["title"]
 
 
-# Exercise templates for seeded skills
-SKILL_EXERCISES = {
-    "अक्षर": [
+# ---------------------------------------------------------------------------
+# Exercise templates — VS3: multiple_choice + fill_blank + word_match
+# NOTE: No audio exercises (audio infrastructure TBD for a later sprint).
+# ---------------------------------------------------------------------------
+
+SKILL_EXERCISES: dict[str, list[dict]] = {
+    # \u0905\u0915\u094d\u0937\u0930 = Letters
+    "\u0905\u0915\u094d\u0937\u0930": [
         {
+            "type": "multiple_choice",
             "prompt": "Which Hindi letter makes the short 'a' sound?",
-            "choices": ["अ", "आ", "इ", "ई"],
+            "choices": ["\u0905", "\u0906", "\u0907", "\u0908"],
             "correct_index": 0,
-            "explanation": "'अ' (a) is the first vowel of the Devanagari script.",
+            "explanation": "'\u0905' (a) is the first vowel of the Devanagari script.",
         },
         {
-            "prompt": "Select the transliteration for the letter 'क':",
-            "choices": ["ka", "kha", "ga", "gha"],
+            "type": "fill_blank",
+            "sentence": "The letter ___ makes the 'ka' sound.",
+            "prompt": "Fill in the blank:",
+            "choices": ["\u0915", "\u0917", "\u091f", "\u0928"],
             "correct_index": 0,
-            "explanation": "'क' represents the consonant 'ka'.",
+            "explanation": "'\u0915' represents the consonant 'ka'.",
         },
         {
-            "prompt": "Which letter represents the 'i' sound?",
-            "choices": ["इ", "उ", "ए", "ओ"],
-            "correct_index": 0,
-            "explanation": "'इ' makes the short 'i' sound.",
+            "type": "word_match",
+            "prompt": "Match each Hindi letter to its sound:",
+            "pairs": [
+                {"hindi": "\u0905", "english": "a"},
+                {"hindi": "\u0915", "english": "ka"},
+                {"hindi": "\u0917", "english": "ga"},
+                {"hindi": "\u092e", "english": "ma"},
+            ],
         },
     ],
+    # Basics
     "Basics": [
         {
+            "type": "multiple_choice",
             "prompt": "How do you say 'Hello' in Hindi?",
             "choices": [
-                "नमस्ते (Namaste)",
-                "शुभ प्रभात (Good morning)",
-                "धन्यवाद (Thank you)",
-                "हाँ (Yes)",
+                "\u0928\u092e\u0938\u094d\u0924\u0947 (Namaste)",
+                "\u0936\u0941\u092d \u092a\u094d\u0930\u092d\u093e\u0924 (Good morning)",
+                "\u0927\u0928\u094d\u092f\u0935\u093e\u0926 (Thank you)",
+                "\u0939\u093e\u0901 (Yes)",
             ],
             "correct_index": 0,
-            "explanation": "'नमस्ते' (Namaste) is the common Hindi greeting.",
+            "explanation": "'\u0928\u092e\u0938\u094d\u0924\u0947' (Namaste) is the common Hindi greeting.",
         },
         {
-            "prompt": "Select the Hindi word for 'Water':",
-            "choices": ["पानी (Paani)", "चाय (Chai)", "दूध (Doodh)", "फल (Phal)"],
+            "type": "fill_blank",
+            "sentence": "___ (Paani) means water in Hindi.",
+            "prompt": "Fill in the blank:",
+            "choices": ["\u092a\u093e\u0928\u0940", "\u091a\u093e\u092f", "\u0926\u0942\u0927", "\u092b\u0932"],
             "correct_index": 0,
-            "explanation": "'पानी' (Paani) means water.",
+            "explanation": "'\u092a\u093e\u0928\u0940' (Paani) means water.",
         },
         {
-            "prompt": "What does 'हाँ' (Haan) mean?",
-            "choices": ["Yes", "No", "Thanks", "Please"],
-            "correct_index": 0,
-            "explanation": "'हाँ' (Haan) means 'Yes'.",
+            "type": "word_match",
+            "prompt": "Match the Hindi words to their English meanings:",
+            "pairs": [
+                {"hindi": "\u0928\u092e\u0938\u094d\u0924\u0947", "english": "Hello"},
+                {"hindi": "\u0939\u093e\u0901", "english": "Yes"},
+                {"hindi": "\u0928\u0939\u0940\u0902", "english": "No"},
+                {"hindi": "\u092a\u093e\u0928\u0940", "english": "Water"},
+            ],
         },
     ],
-    "परिचय": [
+    # \u092a\u0930\u093f\u091a\u092f = Intro
+    "\u092a\u0930\u093f\u091a\u092f": [
         {
+            "type": "multiple_choice",
             "prompt": "How do you say 'My name is...' in Hindi?",
             "choices": [
-                "मेरा नाम... है (Mera naam... hai)",
-                "मैं ठीक हूँ (Main theek hoon)",
-                "नमस्ते (Namaste)",
-                "आप कैसे हैं (Aap kaise hain)",
+                "\u092e\u0947\u0930\u093e \u0928\u093e\u092e... \u0939\u0948 (Mera naam... hai)",
+                "\u092e\u0948\u0902 \u0920\u0940\u0915 \u0939\u0942\u0901 (Main theek hoon)",
+                "\u0928\u092e\u0938\u094d\u0924\u0947 (Namaste)",
+                "\u0906\u092a \u0915\u0948\u0938\u0947 \u0939\u0948\u0902 (Aap kaise hain)",
             ],
             "correct_index": 0,
-            "explanation": "'मेरा नाम... है' is used to introduce yourself.",
+            "explanation": "'\u092e\u0947\u0930\u093e \u0928\u093e\u092e... \u0939\u0948' is used to introduce yourself.",
         },
         {
-            "prompt": "What does 'मैं' (Main) mean?",
-            "choices": ["I", "You", "He", "They"],
+            "type": "fill_blank",
+            "sentence": "___ (Main) means 'I' in Hindi.",
+            "prompt": "Fill in the blank:",
+            "choices": ["\u092e\u0948\u0902", "\u0924\u0941\u092e", "\u0935\u0939", "\u0939\u092e"],
             "correct_index": 0,
-            "explanation": "'मैं' (Main) means 'I'.",
+            "explanation": "'\u092e\u0948\u0902' (Main) means 'I'.",
         },
         {
-            "prompt": "Select the translation for 'Good / Okay':",
-            "choices": ["ठीक (Theek)", "बड़ा (Bada)", "छोटा (Chhota)", "अच्छा (Achha)"],
+            "type": "word_match",
+            "prompt": "Match the pronouns:",
+            "pairs": [
+                {"hindi": "\u092e\u0948\u0902", "english": "I"},
+                {"hindi": "\u0924\u0941\u092e", "english": "You"},
+                {"hindi": "\u0935\u0939", "english": "He/She"},
+                {"hindi": "\u0939\u092e", "english": "We"},
+            ],
+        },
+    ],
+    # \u092a\u0930\u093f\u0935\u093e\u0930 = Family
+    "\u092a\u0930\u093f\u0935\u093e\u0930": [
+        {
+            "type": "multiple_choice",
+            "prompt": "How do you say 'Mother' in Hindi?",
+            "choices": ["\u092e\u093e\u0901 (Maa)", "\u092a\u093f\u0924\u093e\u091c\u0940 (Pitaji)", "\u092d\u093e\u0908 (Bhai)", "\u092c\u0939\u0928 (Behen)"],
             "correct_index": 0,
-            "explanation": "'ठीक' (Theek) means fine/okay.",
+            "explanation": "'\u092e\u093e\u0901' (Maa) means mother.",
+        },
+        {
+            "type": "fill_blank",
+            "sentence": "My ___ (Bhai) is my brother.",
+            "prompt": "Fill in the blank:",
+            "choices": ["\u092d\u093e\u0908", "\u092c\u0939\u0928", "\u092e\u093e\u0901", "\u092a\u093f\u0924\u093e\u091c\u0940"],
+            "correct_index": 0,
+            "explanation": "'\u092d\u093e\u0908' (Bhai) means brother.",
+        },
+        {
+            "type": "word_match",
+            "prompt": "Match family members:",
+            "pairs": [
+                {"hindi": "\u092e\u093e\u0901", "english": "Mother"},
+                {"hindi": "\u092a\u093f\u0924\u093e\u091c\u0940", "english": "Father"},
+                {"hindi": "\u092d\u093e\u0908", "english": "Brother"},
+                {"hindi": "\u092c\u0939\u0928", "english": "Sister"},
+            ],
+        },
+    ],
+    # \u091c\u093e\u0928\u0935\u0930 = Animals
+    "\u091c\u093e\u0928\u0935\u0930": [
+        {
+            "type": "multiple_choice",
+            "prompt": "What is the Hindi word for 'Dog'?",
+            "choices": ["\u0915\u0941\u0924\u094d\u0924\u093e (Kutta)", "\u092c\u093f\u0932\u094d\u0932\u0940 (Billi)", "\u0917\u093e\u092f (Gaay)", "\u0918\u094b\u0921\u093c\u093e (Ghoda)"],
+            "correct_index": 0,
+            "explanation": "'\u0915\u0941\u0924\u094d\u0924\u093e' (Kutta) means dog.",
+        },
+        {
+            "type": "fill_blank",
+            "sentence": "___ (Billi) is the Hindi word for cat.",
+            "prompt": "Fill in the blank:",
+            "choices": ["\u092c\u093f\u0932\u094d\u0932\u0940", "\u0915\u0941\u0924\u094d\u0924\u093e", "\u0917\u093e\u092f", "\u0918\u094b\u0921\u093c\u093e"],
+            "correct_index": 0,
+            "explanation": "'\u092c\u093f\u0932\u094d\u0932\u0940' (Billi) means cat.",
+        },
+        {
+            "type": "word_match",
+            "prompt": "Match the animals:",
+            "pairs": [
+                {"hindi": "\u0915\u0941\u0924\u094d\u0924\u093e", "english": "Dog"},
+                {"hindi": "\u092c\u093f\u0932\u094d\u0932\u0940", "english": "Cat"},
+                {"hindi": "\u0917\u093e\u092f", "english": "Cow"},
+                {"hindi": "\u0918\u094b\u0921\u093c\u093e", "english": "Horse"},
+            ],
+        },
+    ],
+    # \u092d\u094b\u091c\u0928 = Food
+    "\u092d\u094b\u091c\u0928": [
+        {
+            "type": "multiple_choice",
+            "prompt": "What does '\u0930\u094b\u091f\u0940' (Roti) mean?",
+            "choices": ["Bread/Flatbread", "Rice", "Vegetable", "Lentils"],
+            "correct_index": 0,
+            "explanation": "'\u0930\u094b\u091f\u0940' (Roti) is a common Indian flatbread.",
+        },
+        {
+            "type": "fill_blank",
+            "sentence": "___ (Chawal) is the Hindi word for rice.",
+            "prompt": "Fill in the blank:",
+            "choices": ["\u091a\u093e\u0935\u0932", "\u0930\u094b\u091f\u0940", "\u0926\u093e\u0932", "\u0938\u092c\u094d\u091c\u0940"],
+            "correct_index": 0,
+            "explanation": "'\u091a\u093e\u0935\u0932' (Chawal) means rice.",
+        },
+        {
+            "type": "word_match",
+            "prompt": "Match the food words:",
+            "pairs": [
+                {"hindi": "\u0930\u094b\u091f\u0940", "english": "Bread"},
+                {"hindi": "\u091a\u093e\u0935\u0932", "english": "Rice"},
+                {"hindi": "\u0926\u093e\u0932", "english": "Lentils"},
+                {"hindi": "\u0938\u092c\u094d\u091c\u0940", "english": "Vegetable"},
+            ],
+        },
+    ],
+    # \u0938\u0902\u0916\u094d\u092f\u093e\u090f\u0901 = Numbers
+    "\u0938\u0902\u0916\u094d\u092f\u093e\u090f\u0901": [
+        {
+            "type": "multiple_choice",
+            "prompt": "What is '\u090f\u0915' (Ek) in English?",
+            "choices": ["One", "Two", "Three", "Four"],
+            "correct_index": 0,
+            "explanation": "'\u090f\u0915' (Ek) means one.",
+        },
+        {
+            "type": "fill_blank",
+            "sentence": "___ (Do) means two in Hindi.",
+            "prompt": "Fill in the blank:",
+            "choices": ["\u0926\u094b", "\u0924\u0940\u0928", "\u091a\u093e\u0930", "\u092a\u093e\u0901\u091a"],
+            "correct_index": 0,
+            "explanation": "'\u0926\u094b' (Do) means two.",
+        },
+        {
+            "type": "word_match",
+            "prompt": "Match numbers to their Hindi words:",
+            "pairs": [
+                {"hindi": "\u090f\u0915", "english": "One"},
+                {"hindi": "\u0926\u094b", "english": "Two"},
+                {"hindi": "\u0924\u0940\u0928", "english": "Three"},
+                {"hindi": "\u091a\u093e\u0930", "english": "Four"},
+            ],
         },
     ],
 }
 
-DEFAULT_EXERCISES = [
+DEFAULT_EXERCISES: list[dict] = [
     {
+        "type": "multiple_choice",
         "prompt": "Select the correct Hindi word:",
-        "choices": ["नमस्ते", "हाँ", "नहीं", "पानी"],
+        "choices": ["\u0928\u092e\u0938\u094d\u0924\u0947", "\u0939\u093e\u0901", "\u0928\u0939\u0940\u0902", "\u092a\u093e\u0928\u0940"],
         "correct_index": 0,
         "explanation": "Correct choice selected.",
     },
     {
-        "prompt": "Choose the best translation:",
-        "choices": ["Yes", "No", "Water", "Tea"],
+        "type": "fill_blank",
+        "sentence": "___ means hello in Hindi.",
+        "prompt": "Fill in the blank:",
+        "choices": ["\u0928\u092e\u0938\u094d\u0924\u0947", "\u0939\u093e\u0901", "\u0928\u0939\u0940\u0902", "\u092a\u093e\u0928\u0940"],
         "correct_index": 0,
-        "explanation": "Correct choice selected.",
+        "explanation": "'\u0928\u092e\u0938\u094d\u0924\u0947' (Namaste) means hello.",
     },
     {
-        "prompt": "Select the correct option:",
-        "choices": ["Option A", "Option B", "Option C", "Option D"],
-        "correct_index": 0,
-        "explanation": "Correct option selected.",
+        "type": "word_match",
+        "prompt": "Match the words:",
+        "pairs": [
+            {"hindi": "\u0928\u092e\u0938\u094d\u0924\u0947", "english": "Hello"},
+            {"hindi": "\u0939\u093e\u0901", "english": "Yes"},
+            {"hindi": "\u0928\u0939\u0940\u0902", "english": "No"},
+            {"hindi": "\u092a\u093e\u0928\u0940", "english": "Water"},
+        ],
     },
 ]
 
@@ -236,7 +386,7 @@ def seed_content(session: Session) -> Course:
 
                 lesson = Lesson(
                     skill_id=skill.id,
-                    title=f"{skill.title} — Lesson 1",
+                    title=f"{skill.title} \u2014 Lesson 1",
                     sort_order=0,
                     xp_reward=10,
                 )
@@ -260,9 +410,11 @@ def seed_content(session: Session) -> Course:
             skill_title = skill.title if skill else ""
             templates = SKILL_EXERCISES.get(skill_title, DEFAULT_EXERCISES)
             for idx, ex_data in enumerate(templates):
+                # Use the "type" field from template; fall back to "multiple_choice".
+                ex_type = ex_data.get("type", "multiple_choice")
                 exercise = Exercise(
                     lesson_id=lesson.id,
-                    exercise_type="multiple_choice",
+                    exercise_type=ex_type,
                     exercise_data=json.dumps(ex_data),
                     sort_order=idx,
                     difficulty=1,

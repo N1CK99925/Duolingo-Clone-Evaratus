@@ -87,6 +87,12 @@
   * {
     border-color: var(--color-border);
   }
+
+  /* Ensure Devanagari/Hindi text renders correctly */
+  .hindi-text,
+  [lang="hi"] {
+    font-family: "Noto Sans Devanagari", "Mangal", "Arial Unicode MS", "Segoe UI", system-ui, sans-serif;
+  }
 }
 
 /* ── Duolingo-style chunky 3D button ── */

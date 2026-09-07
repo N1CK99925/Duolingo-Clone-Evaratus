@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 
 # Point the app at an in-memory DB BEFORE importing anything app-related.
 os.environ["DUO_DATABASE_URL"] = "sqlite://"
+os.environ["DUO_INFINITE_HEARTS"] = "false"
 
 from app.db import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402

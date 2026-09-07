@@ -37,7 +37,7 @@ class LessonDetail(BaseModel):
 class AnswerSubmitRequest(BaseModel):
     """Payload for submitting an answer to an exercise."""
 
-    user_answer: str | int
+    user_answer: Any
     time_spent_ms: int | None = None
 
 

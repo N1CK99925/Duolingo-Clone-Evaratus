@@ -1,4 +1,4 @@
-"""Service functions for lesson player, exercise submission, and completion (VS2)."""
+"""Service functions for lesson player, exercise submission, and completion (VS2/VS3)."""
 
 import json
 from datetime import datetime, timedelta
@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.course import Exercise, Lesson, Skill
 from app.models.gamification import ExerciseResponse, Hearts, Streak, XpLog
 from app.models.user import User, UserProgress
@@ -69,6 +70,33 @@ def get_lesson_detail(db: Session, lesson_id: int) -> LessonDetail:
     )
 
 
+def _check_answer(exercise_type: str, data: dict, user_answer: Any) -> bool:
+    """Return True if user_answer is correct for the given exercise type and data."""
+    str_ans = str(user_answer).strip()
+
+    if exercise_type in ("multiple_choice", "fill_blank"):
+        # Answer is the 0-based index of the correct choice.
+        correct_index = data.get("correct_index", 0)
+        choices = data.get("choices", [])
+        if str_ans.isdigit() and int(str_ans) == correct_index:
+            return True
+        if choices and 0 <= correct_index < len(choices):
+            if str_ans.lower() == str(choices[correct_index]).lower():
+                return True
+        return False
+
+    if exercise_type == "word_match":
+        # Check dictionary of {hindi: english} pairs against data["pairs"]
+        if isinstance(user_answer, dict):
+            expected_pairs = {p["hindi"]: p["english"] for p in data.get("pairs", [])}
+            return user_answer == expected_pairs
+        str_ans = str(user_answer).strip()
+        return str_ans.lower() in ("all_correct", "true", "1")
+
+    # Unknown exercise types: default to correct so they don't block players.
+    return True
+
+
 def submit_exercise_answer(
     db: Session,
     user_id: int,
@@ -96,22 +124,13 @@ def submit_exercise_answer(
     except Exception:
         data = {}
 
-    correct_index = data.get("correct_index", 0)
-    choices = data.get("choices", [])
     explanation = data.get("explanation")
+    correct_index = data.get("correct_index", 0)
 
-    is_correct = False
+    is_correct = _check_answer(exercise.exercise_type, data, user_answer)
 
-    # Check choice index (as int or numeric string)
-    str_ans = str(user_answer).strip()
-    if str_ans.isdigit() and int(str_ans) == correct_index:
-        is_correct = True
-    elif choices and 0 <= correct_index < len(choices):
-        correct_choice_text = choices[correct_index]
-        if str_ans.lower() == str(correct_choice_text).lower():
-            is_correct = True
-
-    if not is_correct:
+    # Decrement hearts only when wrong AND infinite_hearts is disabled.
+    if not is_correct and not settings.infinite_hearts:
         hearts.current_hearts = max(0, hearts.current_hearts - 1)
         hearts.updated_at = datetime.utcnow()
 
@@ -134,7 +153,7 @@ def submit_exercise_answer(
         explanation=explanation,
         current_hearts=hearts.current_hearts,
         max_hearts=hearts.max_hearts,
-        is_out_of_hearts=hearts.current_hearts <= 0,
+        is_out_of_hearts=hearts.current_hearts <= 0 and not settings.infinite_hearts,
     )
 
 

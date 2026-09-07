@@ -9,6 +9,8 @@ import {
 } from "@/lib/api";
 import { LessonHeader } from "@/components/lesson/LessonHeader";
 import { MultipleChoice } from "@/components/lesson/MultipleChoice";
+import { FillBlank } from "@/components/lesson/FillBlank";
+import { WordMatch } from "@/components/lesson/WordMatch";
 import { LessonFooter } from "@/components/lesson/LessonFooter";
 import { LessonCompleteScreen, OutOfHeartsScreen } from "@/components/lesson/LessonEndScreens";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -16,7 +18,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 type Phase = "loading" | "complete" | "outOfHearts" | "error";
 
-/** VS2 lesson player: multiple-choice exercises, hearts, feedback bar, completion. */
+/** VS3 lesson player: supports multiple_choice, fill_blank, and word_match exercise types. */
 function LessonPlayer() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -27,7 +29,7 @@ function LessonPlayer() {
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
   const [idx, setIdx] = useState(0);
   const [hearts, setHearts] = useState(5);
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<any>(null);
   const [feedback, setFeedback] = useState<AnswerResult | null>(null);
   const [result, setResult] = useState<LessonCompleteResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -108,10 +110,15 @@ function LessonPlayer() {
     }
   }, [lesson, exercise, selected, feedback, submitting]);
 
-  /* Keyboard: number keys pick options, Enter checks/continues. */
+  /* Keyboard: number keys pick options (for multiple_choice / fill_blank), Enter checks/continues. */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const count = exercise?.exercise_data.choices?.length ?? 0;
+      let data: any = {};
+      try {
+        data = typeof exercise?.exercise_data === "string" ? JSON.parse(exercise.exercise_data) : exercise?.exercise_data || {};
+      } catch (err) {}
+      const choices = data.choices || data.options || [];
+      const count = choices.length;
       const n = Number.parseInt(e.key, 10);
       if (!feedback && n >= 1 && n <= count) setSelected(n - 1);
       if (e.key === "Enter") {
@@ -150,7 +157,7 @@ function LessonPlayer() {
   }
 
   const correctText = feedback
-    ? (exercise.exercise_data.choices?.[Number(feedback.correct_answer)] ?? "")
+    ? String(feedback.correct_answer ?? "")
     : "";
 
   return (
@@ -159,14 +166,34 @@ function LessonPlayer() {
 
       <main className="flex flex-1 justify-center px-4 pb-40 pt-4 sm:px-6">
         <div className="w-full max-w-2xl">
-          <MultipleChoice
-            exercise={exercise}
-            selected={selected}
-            feedback={feedback}
-            onSelect={(i) => {
-              if (!feedback) setSelected(i);
-            }}
-          />
+          {exercise.exercise_type === "fill_blank" ? (
+            <FillBlank
+              exercise={exercise}
+              selected={selected}
+              feedback={feedback}
+              onSelect={(i) => {
+                if (!feedback) setSelected(i);
+              }}
+            />
+          ) : exercise.exercise_type === "word_match" ? (
+            <WordMatch
+              exercise={exercise}
+              selected={selected}
+              feedback={feedback}
+              onSelect={(matches) => {
+                if (!feedback) setSelected(matches);
+              }}
+            />
+          ) : (
+            <MultipleChoice
+              exercise={exercise}
+              selected={selected}
+              feedback={feedback}
+              onSelect={(i) => {
+                if (!feedback) setSelected(i);
+              }}
+            />
+          )}
         </div>
       </main>
 

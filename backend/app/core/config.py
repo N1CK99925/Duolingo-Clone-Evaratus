@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # Default (seeded) learner username. No real auth.
     default_username: str = "learner"
 
+    # VS3: Set to True during development to give players unlimited lives.
+    infinite_hearts: bool = False
+
     model_config = SettingsConfigDict(env_prefix="DUO_", env_file=".env", extra="ignore")
 
 
