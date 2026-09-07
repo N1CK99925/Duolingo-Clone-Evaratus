@@ -12,7 +12,6 @@ class ExerciseDetail(BaseModel):
     lesson_id: int
     exercise_type: str
     sort_order: int
-    difficulty: int
     exercise_data: dict[str, Any]
 
     model_config = ConfigDict(from_attributes=True)
@@ -26,9 +25,7 @@ class LessonDetail(BaseModel):
     title: str
     sort_order: int
     xp_reward: int
-    is_hard: int
     skill_title: str
-    skill_color: str
     exercises: list[ExerciseDetail]
 
     model_config = ConfigDict(from_attributes=True)

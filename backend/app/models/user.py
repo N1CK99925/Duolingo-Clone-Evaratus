@@ -13,7 +13,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    avatar_url: Mapped[str | None] = mapped_column(String)
+    # Kept: the profile page shows the "Joined <date>" line from this column.
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Denormalized gamification counters (updated by the API on each event).
@@ -24,21 +24,16 @@ class User(Base):
 
 
 class UserProgress(Base):
+    """One row per completed lesson. Skill progress is derived by counting rows."""
+
     __tablename__ = "user_progress"
     __table_args__ = ({"sqlite_autoincrement": True},)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    # Denormalized so progress queries don't need a lesson -> skill join.
     skill_id: Mapped[int] = mapped_column(ForeignKey("skills.id", ondelete="CASCADE"))
-    # NULL = skill-level aggregate row; otherwise per-lesson completion row.
-    lesson_id: Mapped[int | None] = mapped_column(
-        ForeignKey("lessons.id", ondelete="SET NULL"), nullable=True
-    )
-    crown_level: Mapped[int] = mapped_column(Integer, default=0)
-    lessons_completed: Mapped[int] = mapped_column(Integer, default=0)
+    lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id", ondelete="CASCADE"))
     is_completed: Mapped[int] = mapped_column(Integer, default=0)
-    last_practiced: Mapped[datetime | None] = mapped_column(DateTime)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user: Mapped["User"] = relationship(back_populates="progress")

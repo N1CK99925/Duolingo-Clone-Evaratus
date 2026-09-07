@@ -45,7 +45,7 @@ def _progress_by_skill(db: Session, user_id: int) -> dict[int, dict]:
             UserProgress.skill_id,
             func.count(UserProgress.id),
         )
-        .where(UserProgress.user_id == user_id, UserProgress.lesson_id.is_not(None))
+        .where(UserProgress.user_id == user_id, UserProgress.is_completed == 1)
         .group_by(UserProgress.skill_id)
     ).all()
     return {skill_id: {"lessons_completed": count} for skill_id, count in rows}
@@ -60,13 +60,9 @@ def get_path(db: Session, stop_at_incomplete: bool = True) -> PathResponse:
       - Skills at/after the active skill are `locked`.
     """
     user = get_default_user(db)
-    course = (
-        db.execute(select(Course).where(Course.is_active == 1).order_by(Course.id))
-        .scalars()
-        .first()
-    )
+    course = db.execute(select(Course).order_by(Course.id)).scalars().first()
     if course is None:
-        raise LookupError("No active course seeded.")
+        raise LookupError("No course seeded.")
 
     progress = _progress_by_skill(db, user.id)
     units = (
@@ -117,9 +113,7 @@ def get_path(db: Session, stop_at_incomplete: bool = True) -> PathResponse:
                     description=skill.description,
                     icon=skill.icon,
                     sort_order=skill.sort_order,
-                    color=skill.skill_color,
                     state=state,
-                    crown_level=2 if completed else 0,  # placeholder crown for completed
                     lessons_completed=completed,
                     lesson_count=lesson_count,
                     first_lesson_id=first_lesson_id,

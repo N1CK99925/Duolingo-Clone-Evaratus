@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.models.course import Lesson
-from app.models.gamification import Streak, XpLog
+from app.models.gamification import Streak
 from app.services.gamification import update_achievements, update_streak
 
 
@@ -108,21 +108,24 @@ def test_leaderboard_position_after_earning_xp(client, db_session):
     assert mine["rank"] == 9
 
 
-# --- XP log -----------------------------------------------------------------
+# --- XP persistence ---------------------------------------------------------
 
 
-def test_xp_log_appends_on_lesson_complete(client, db_session):
+def test_total_xp_accumulates_on_repeat_completions(client, db_session):
+    """users.total_xp keeps accumulating across completions (persistence check)."""
     lesson_id = _first_lesson_id(db_session)
 
     resp = client.post(f"/api/lessons/{lesson_id}/complete")
     assert resp.status_code == 200
-    assert resp.json()["xp_awarded"] == 10
+    assert resp.json()["total_xp"] == 10
 
-    client.post(f"/api/lessons/{lesson_id}/complete")
+    resp = client.post(f"/api/lessons/{lesson_id}/complete")
+    assert resp.status_code == 200
+    assert resp.json()["total_xp"] == 20
 
-    rows = db_session.execute(select(XpLog)).scalars().all()
-    assert len(rows) == 2
-    assert all(r.amount == 10 and r.source == "lesson_complete" for r in rows)
+    me = client.get("/api/me").json()
+    assert me["total_xp"] == 20
+
 
 
 # --- Daily goal -------------------------------------------------------------

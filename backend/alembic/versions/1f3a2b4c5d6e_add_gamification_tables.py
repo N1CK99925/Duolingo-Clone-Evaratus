@@ -1,7 +1,7 @@
 """Add gamification tables for VS4: daily_goals, achievements, leaderboard_entries.
 
 Revision ID: 1f3a2b4c5d6e
-Revises: 58cbffa40e69
+Revises: 6a1f82b7c4d1
 Create Date: 2026-09-07 15:45:00.000000
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "1f3a2b4c5d6e"
-down_revision: str | Sequence[str] | None = "58cbffa40e69"
+down_revision: str | Sequence[str] | None = "6a1f82b7c4d1"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

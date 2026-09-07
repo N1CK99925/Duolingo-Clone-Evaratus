@@ -13,6 +13,7 @@ import { FillBlank } from "@/components/lesson/FillBlank";
 import { WordMatch } from "@/components/lesson/WordMatch";
 import { LessonFooter } from "@/components/lesson/LessonFooter";
 import { LessonCompleteScreen, OutOfHeartsScreen } from "@/components/lesson/LessonEndScreens";
+import { playSound } from "@/lib/sound";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
@@ -73,6 +74,7 @@ function LessonPlayer() {
       api
         .completeLesson(lesson.id)
         .then((res) => {
+          playSound("/assets/audio/completeLesson.mp3");
           setResult(res);
           setPhase("complete");
         })
@@ -94,6 +96,7 @@ function LessonPlayer() {
     setSubmitting(true);
     try {
       const res = await api.submitAnswer(lesson.id, exercise.id, selected);
+      playSound(res.is_correct ? "/assets/audio/correct.mp3" : "/assets/audio/incorrect.mp3");
       setFeedback(res);
       setHearts(res.current_hearts);
       // Duolingo behavior: correct answers auto-advance; running dry shows the fail screen.

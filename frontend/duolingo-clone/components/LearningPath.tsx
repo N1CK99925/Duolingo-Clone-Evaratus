@@ -3,7 +3,7 @@
 import { api, PathResponse, SkillNode, UnitNode } from "@/lib/api";
 import { SkillNodeComponent } from "./SkillNode";
 import { BackArrowIcon, ChestIcon, GuidebookIcon } from "./icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* Winding-trail horizontal offsets (px), cycled per skill within a unit. */
 const OFFSETS = [0, 60, 110, 60, 0, -60, -110, -60];
@@ -31,6 +31,9 @@ interface LearningPathProps {
 export function LearningPath({ onSkillClick }: LearningPathProps) {
   const [path, setPath] = useState<PathResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [viewIdx, setViewIdx] = useState(0);
+  const sectionRefs = useRef<(HTMLElement | null)[]>([]);
+  const didInitialScroll = useRef(false);
 
   useEffect(() => {
     api.path()
@@ -43,6 +46,45 @@ export function LearningPath({ onSkillClick }: LearningPathProps) {
         setLoading(false);
       });
   }, []);
+
+  // The unit holding the current active lesson — Duo mascot sits beside its active node.
+  const activeIdx = path
+    ? Math.max(0, path.units.findIndex((u) => u.skills.some((s) => s.state === "active")))
+    : 0;
+
+  /* The sticky banner reflects whichever unit zone is currently scrolled into view. */
+  useEffect(() => {
+    if (!path) return;
+    const compute = () => {
+      const probe = 120; // units whose top passed just under the sticky banner
+      let idx = 0;
+      sectionRefs.current.forEach((el, i) => {
+        if (el && el.getBoundingClientRect().top <= probe) idx = i;
+      });
+      setViewIdx(idx);
+    };
+    compute();
+    window.addEventListener("scroll", compute, { passive: true });
+    window.addEventListener("resize", compute);
+    return () => {
+      window.removeEventListener("scroll", compute);
+      window.removeEventListener("resize", compute);
+    };
+  }, [path]);
+
+  /* On first load, jump to the learner's current unit (Duolingo behavior). */
+  useEffect(() => {
+    if (!path || didInitialScroll.current) return;
+    didInitialScroll.current = true;
+    const el = sectionRefs.current[activeIdx];
+    if (el) {
+      window.scrollTo({
+        top: el.getBoundingClientRect().top + window.scrollY - 72,
+        behavior: "auto",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path]);
 
   if (loading) {
     return (
@@ -59,12 +101,6 @@ export function LearningPath({ onSkillClick }: LearningPathProps) {
       </div>
     );
   }
-
-  // The unit holding the current active lesson gets the full colored banner.
-  const bannerIdx = Math.max(
-    0,
-    path.units.findIndex((u) => u.skills.some((s) => s.state === "active")),
-  );
 
   // Pre-compute section accents so the guideline colors match their section.
   const accents = path.units.map((_, idx) => sectionAccent(idx));
@@ -85,28 +121,36 @@ export function LearningPath({ onSkillClick }: LearningPathProps) {
         }}
       />
 
+      {/* Sticky unit banner — shows the unit zone currently in view (any unit, prev or next). */}
+      <div className="sticky top-14 lg:top-0 z-20 w-full">
+        <UnitBanner
+          key={viewIdx}
+          unit={path.units[viewIdx]}
+          unitNumber={viewIdx + 1}
+          accent={accents[viewIdx]}
+          isActive={viewIdx === activeIdx}
+        />
+      </div>
+
       {path.units.map((unit: UnitNode, unitIdx: number) => {
         const accent = accents[unitIdx];
         return (
-          <section key={unit.id} className="w-full flex flex-col items-center relative">
-            {unitIdx === bannerIdx ? (
-              <UnitBanner unit={unit} unitNumber={unitIdx + 1} accent={accent} />
-            ) : (
-              <UnitDivider unit={unit} accent={accent} />
-            )}
+          <section
+            key={unit.id}
+            ref={(el) => {
+              sectionRefs.current[unitIdx] = el;
+            }}
+            className="w-full flex flex-col items-center relative"
+          >
 
             {/* Node trail — zigzag with a treasure chest mid-unit and Duo beside the active node */}
-            <div
-              className={`flex flex-col items-center relative ${
-                unitIdx === bannerIdx ? "pt-16 pb-12" : "py-8"
-              }`}
-            >
+            <div className="flex flex-col items-center relative pt-16 pb-12">
               {/* Section-colored guideline dot per node row */}
               {unit.skills.map((skill: SkillNode, skillIdx: number) => (
                 <div
                   key={skill.id}
                   className="absolute left-[175px] top-1/2 -translate-y-1/2 pointer-events-none"
-                  style={{ marginTop: `${skillIdx * 92 + (unitIdx === bannerIdx ? 80 : 40)}px` }}
+                  style={{ marginTop: `${skillIdx * 92 + 80}px` }}
                 >
                   <span
                     className="block w-1.5 h-1.5 rounded-full"
@@ -144,15 +188,28 @@ export function LearningPath({ onSkillClick }: LearningPathProps) {
   );
 }
 
-/** Colored banner for the current unit — "← SECTION N, UNIT N / topic" + guidebook. */
-function UnitBanner({ unit, unitNumber, accent }: { unit: UnitNode; unitNumber: number; accent: ReturnType<typeof sectionAccent> }) {
+/** Colored unit banner — "← SECTION N, UNIT N / topic" + guidebook, shown for every unit. */
+function UnitBanner({
+  unit,
+  unitNumber,
+  accent,
+  isActive,
+}: {
+  unit: UnitNode;
+  unitNumber: number;
+  accent: ReturnType<typeof sectionAccent>;
+  isActive: boolean;
+}) {
   return (
     <div
       className="w-full rounded-2xl px-4 py-3 flex items-center gap-3 shadow-[0_4px_0_#00000010]"
       style={{ background: accent.banner, boxShadow: `0 4px 0 ${accent.shadow}` }}
       data-testid="unit-banner"
     >
-      <button aria-label="Back" className="p-2 rounded-xl text-white hover:bg-white/10 shrink-0">
+      <button
+        aria-label="Back"
+        className={`p-2 rounded-xl text-white shrink-0 ${isActive ? "hover:bg-white/10" : "opacity-60"}`}
+      >
         <BackArrowIcon className="h-5 w-5" />
       </button>
       <div className="min-w-0 flex-1">
@@ -163,7 +220,11 @@ function UnitBanner({ unit, unitNumber, accent }: { unit: UnitNode; unitNumber: 
           {topicOf(unit.title)}
         </h2>
       </div>
-      <button className="flex items-center gap-2 shrink-0 rounded-xl bg-white px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-white/90 shadow-[0_3px_0_rgba(0,0,0,0.15)] hover:bg-[#F7F7F7]">
+      <button
+        className={`flex items-center gap-2 shrink-0 rounded-xl bg-white px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-white/90 shadow-[0_3px_0_rgba(0,0,0,0.15)] ${
+          isActive ? "hover:bg-[#F7F7F7]" : "opacity-90"
+        }`}
+      >
         <GuidebookIcon className="h-5 w-5" />
         <span className="hidden sm:inline text-white" style={{ color: accent.shadow }}>Guidebook</span>
       </button>
@@ -171,15 +232,4 @@ function UnitBanner({ unit, unitNumber, accent }: { unit: UnitNode; unitNumber: 
   );
 }
 
-/** Upcoming unit — a colored divider with the topic name, like "— Talk about your job —". */
-function UnitDivider({ unit, accent }: { unit: UnitNode; accent: ReturnType<typeof sectionAccent> }) {
-  return (
-    <div className="w-full max-w-lg flex items-center gap-6 mt-16" data-testid="unit-divider">
-      <span className="h-[2px] flex-1" style={{ background: accent.track }} />
-      <span className="text-lg font-bold whitespace-nowrap" style={{ color: accent.dot }}>
-        {topicOf(unit.title)}
-      </span>
-      <span className="h-[2px] flex-1" style={{ background: accent.track }} />
-    </div>
-  );
-}
+

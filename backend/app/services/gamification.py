@@ -37,7 +37,6 @@ def add_weekly_xp(db: Session, user_id: int, amount: int) -> None:
     """Add XP to the current week's leaderboard entry."""
     entry = get_or_create_leaderboard_entry(db, user_id)
     entry.weekly_xp += amount
-    entry.updated_at = datetime.utcnow()
 
 
 def get_leaderboard(db: Session) -> list[dict[str, Any]]:
@@ -122,7 +121,6 @@ def record_daily_xp(
         daily.xp_today = 0
         daily.last_practice_date = today_str
     daily.xp_today += amount
-    daily.updated_at = now
     db.flush()
     return daily
 
@@ -135,7 +133,6 @@ def set_daily_goal(db: Session, user_id: int, target_xp: int) -> DailyGoal:
         db.add(daily)
     else:
         daily.target_xp = target_xp
-        daily.updated_at = datetime.utcnow()
     db.flush()
     return daily
 
@@ -146,7 +143,6 @@ def _achievement_progress(db: Session, user: User, key: str) -> int:
         return db.execute(
             select(func.count(UserProgress.id)).where(
                 UserProgress.user_id == user.id,
-                UserProgress.lesson_id.is_not(None),
                 UserProgress.is_completed == 1,
             )
         ).scalar_one()
@@ -186,7 +182,7 @@ def get_profile(db: Session, user: User) -> dict[str, Any]:
         db.flush()
 
     achievements = db.execute(
-        select(Achievement).where(Achievement.user_id == user.id).order_by(Achievement.created_at)
+        select(Achievement).where(Achievement.user_id == user.id).order_by(Achievement.id)
     ).scalars().all()
 
     return {

@@ -25,10 +25,8 @@ class SkillNode(BaseModel):
     description: str | None
     icon: str | None
     sort_order: int
-    color: str
     # Derived state for the path UI.
     state: str  # locked | active | completed | available
-    crown_level: int
     lessons_completed: int
     lesson_count: int
     # First lesson in the skill (VS2: the lesson the path opens on click).

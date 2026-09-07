@@ -459,7 +459,7 @@ DEFAULT_EXERCISES: list[dict] = [
 def seed_content(session: Session) -> Course:
     """Create the Hindi course if absent; return the active course."""
     existing = session.execute(
-        select(Course).where(Course.lang_target == "hi", Course.is_active == 1)
+        select(Course).where(Course.lang_target == "hi")
     ).scalar_one_or_none()
 
     if existing:
@@ -467,10 +467,8 @@ def seed_content(session: Session) -> Course:
     else:
         course = Course(
             title="Hindi",
-            subtitle="Learn Hindi from English",
             lang_source="en",
             lang_target="hi",
-            is_active=1,
         )
         session.add(course)
         session.flush()
@@ -491,8 +489,6 @@ def seed_content(session: Session) -> Course:
                     title=_skill_title(skill_data),
                     description=skill_data.get("description"),
                     sort_order=s_order,
-                    skill_color="#58CC02",
-                    is_locked=0,
                 )
                 session.add(skill)
                 session.flush()
@@ -530,7 +526,6 @@ def seed_content(session: Session) -> Course:
                     exercise_type=ex_type,
                     exercise_data=json.dumps(ex_data),
                     sort_order=idx,
-                    difficulty=1,
                 )
                 session.add(exercise)
 
@@ -539,8 +534,6 @@ def seed_content(session: Session) -> Course:
 
 def seed_user(session: Session, username: str) -> User:
     """Get or create the default learner, seeding gamification tables if absent."""
-    from datetime import datetime as _dt
-
     user = session.execute(select(User).where(User.username == username)).scalar_one_or_none()
     if user is None:
         user = User(username=username, total_xp=0, gems=0)
@@ -556,8 +549,6 @@ def seed_user(session: Session, username: str) -> User:
     ).scalar_one_or_none()
     if daily is None:
         daily = DailyGoal(user_id=user.id, target_xp=50, xp_today=0)
-        daily.created_at = _dt.utcnow()
-        daily.updated_at = _dt.utcnow()
         session.add(daily)
 
     # Leaderboard entry for current week
@@ -568,9 +559,7 @@ def seed_user(session: Session, username: str) -> User:
             LeaderboardEntry.week_start == week_str,
         )
     ).scalar_one_or_none() is None:
-        lb = LeaderboardEntry(user_id=user.id, weekly_xp=0, week_start=week_str)
-        lb.created_at = _dt.utcnow()
-        session.add(lb)
+        session.add(LeaderboardEntry(user_id=user.id, weekly_xp=0, week_start=week_str))
 
     # Achievements
     existing_ach_keys = {
@@ -580,17 +569,13 @@ def seed_user(session: Session, username: str) -> User:
     }
     for ach_data in DEFAULT_ACHIEVEMENTS:
         if ach_data["key"] not in existing_ach_keys:
-            ach = Achievement(user_id=user.id, **ach_data)
-            ach.created_at = _dt.utcnow()
-            session.add(ach)
+            session.add(Achievement(user_id=user.id, **ach_data))
 
     return user
 
 
 def seed_leaderboard_rivals(session: Session) -> None:
     """Seed rival learners + their current-week leaderboard entries. Idempotent."""
-    from datetime import datetime as _dt
-
     week_str = _current_week_str()
     for rival in LEADERBOARD_RIVALS:
         user = session.execute(
@@ -612,11 +597,11 @@ def seed_leaderboard_rivals(session: Session) -> None:
             )
         ).scalar_one_or_none()
         if entry is None:
-            lb = LeaderboardEntry(
-                user_id=user.id, weekly_xp=rival["weekly_xp"], week_start=week_str
+            session.add(
+                LeaderboardEntry(
+                    user_id=user.id, weekly_xp=rival["weekly_xp"], week_start=week_str
+                )
             )
-            lb.created_at = _dt.utcnow()
-            session.add(lb)
 
 
 def run_seed(session: Session) -> None:
