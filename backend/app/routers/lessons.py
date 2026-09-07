@@ -12,8 +12,10 @@ from app.schemas.lesson import (
     LessonCompleteResponse,
     LessonDetail,
 )
-from app.services import lesson as lesson_service
-from app.services.path import get_default_user
+from app.services.lesson_detail import get_lesson_detail
+from app.services.lesson_submit import complete_lesson as complete_lesson_service
+from app.services.lesson_submit import submit_exercise_answer
+from app.services.user import get_default_user
 
 router = APIRouter(prefix="/api/lessons", tags=["lessons"])
 
@@ -24,7 +26,7 @@ DbSession = Annotated[Session, Depends(get_db)]
 def get_lesson(id: int, db: DbSession) -> LessonDetail:
     """Get lesson detail including ordered exercises."""
     try:
-        return lesson_service.get_lesson_detail(db, lesson_id=id)
+        return get_lesson_detail(db, lesson_id=id)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -39,7 +41,7 @@ def submit_answer(
     """Submit answer for an exercise within a lesson."""
     try:
         user = get_default_user(db)
-        return lesson_service.submit_exercise_answer(
+        return submit_exercise_answer(
             db=db,
             user_id=user.id,
             lesson_id=id,
@@ -56,7 +58,7 @@ def complete_lesson(id: int, db: DbSession) -> LessonCompleteResponse:
     """Mark a lesson as completed, award XP, and update progress/streak."""
     try:
         user = get_default_user(db)
-        return lesson_service.complete_lesson(db=db, user_id=user.id, lesson_id=id)
+        return complete_lesson_service(db=db, user_id=user.id, lesson_id=id)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

@@ -2,6 +2,7 @@
 
 import { UserSummary } from "@/lib/api";
 import { ArrowIcon, BoltIcon, ChestIcon, ShieldIcon } from "./icons";
+import { HeartsStat } from "./HeartsStat";
 
 function Stat({ icon, value }: { icon: React.ReactNode; value: number }) {
   return (
@@ -30,10 +31,7 @@ export function RightRail({ user }: { user: UserSummary | null }) {
           icon={<img src="/assets/icons/GEM_ICON.svg" alt="Gems" className="h-7 w-7" />}
           value={user?.gems ?? 0}
         />
-        <Stat
-          icon={<img src="/assets/icons/heart.svg" alt="Hearts" className="h-7 w-7" />}
-          value={user?.hearts ?? 0}
-        />
+        <HeartsStat />
       </div>
 
       <div className="flex flex-col gap-4 px-4 pb-8 pt-1">

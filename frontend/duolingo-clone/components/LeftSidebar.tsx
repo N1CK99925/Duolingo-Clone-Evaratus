@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { label: "Quests", href: "/quests", icon: <ChestIcon gold className="h-7 w-7" /> },
   { label: "Shop", href: "/shop", icon: <img src="/assets/shop.svg" alt="" className="h-8 w-8" /> },
   { label: "Profile", href: "/profile", icon: <PersonIcon className="h-7 w-7 text-[#AFAFAF]" /> },
-  { label: "More", href: "#", icon: <MoreIcon className="h-7 w-7" /> },
+  { label: "Settings", href: "/settings", icon: <MoreIcon className="h-7 w-7" /> },
 ];
 
 /** Desktop left navigation — logo + uppercase bold items, blue active state. */

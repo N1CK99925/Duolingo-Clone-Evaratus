@@ -156,6 +156,112 @@ def test_daily_goal_config(client):
     assert client.patch("/api/profile/daily-goal", json={"target_xp": 501}).status_code == 422
 
 
+# --- Hearts lifecycle (VS5) --------------------------------------------------
+
+
+def _drain_hearts(client, lesson_id: str, exercise_id: int, n: int) -> None:
+    for _ in range(n):
+        client.post(
+            f"/api/lessons/{lesson_id}/exercises/{exercise_id}/answer",
+            json={"user_answer": 99},
+        )
+
+
+def test_hearts_regen_over_time(client, db_session):
+    """One wrong answer is refunded after a 30-minute regen window."""
+    from datetime import datetime, timedelta
+
+    from app.models.gamification import Hearts
+
+    lesson_id = _first_lesson_id(db_session)
+    lesson = client.get(f"/api/lessons/{lesson_id}").json()
+    _drain_hearts(client, lesson_id, lesson["exercises"][0]["id"], 2)
+
+    user = _get_user(db_session)
+    hearts = db_session.execute(
+        select(Hearts).where(Hearts.user_id == user.id)
+    ).scalar_one()
+    assert hearts.current_hearts == 3
+
+    # Simulate 31 minutes elapsed since the drain.
+    hearts.last_refill_at = datetime.utcnow() - timedelta(minutes=31)
+    db_session.commit()
+
+    status = client.get("/api/me/hearts").json()
+    assert status["current_hearts"] == 4  # 1 regen'd
+    assert status["next_refill_at"] is not None  # still below max
+
+
+def test_hearts_regen_caps_at_max(client, db_session):
+    """Long elapsed time regens up to max and clears the refill timer."""
+    from datetime import datetime, timedelta
+
+    from app.models.gamification import Hearts
+
+    user = _get_user(db_session)
+    hearts = db_session.execute(
+        select(Hearts).where(Hearts.user_id == user.id)
+    ).scalar_one()
+    hearts.current_hearts = 3
+    hearts.last_refill_at = datetime.utcnow() - timedelta(hours=5)
+    db_session.commit()
+
+    status = client.get("/api/me/hearts").json()
+    assert status["current_hearts"] == 5  # capped
+    assert status["next_refill_at"] is None
+    assert status["is_out_of_hearts"] is False
+
+
+def test_refill_with_gems(client, db_session):
+    """Refill spends 350 gems and restores hearts to max."""
+    from app.models.gamification import Hearts
+
+    user = _get_user(db_session)
+    user.gems = 400
+    hearts = db_session.execute(
+        select(Hearts).where(Hearts.user_id == user.id)
+    ).scalar_one()
+    hearts.current_hearts = 2
+    db_session.commit()
+
+    resp = client.post("/api/me/hearts/refill")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["current_hearts"] == 5
+    assert body["next_refill_at"] is None
+
+    db_session.refresh(user)
+    assert user.gems == 50  # 400 - 350
+
+
+def test_refill_insufficient_gems(client, db_session):
+    from app.models.gamification import Hearts
+
+    user = _get_user(db_session)
+    user.gems = 10
+    hearts = db_session.execute(
+        select(Hearts).where(Hearts.user_id == user.id)
+    ).scalar_one()
+    hearts.current_hearts = 2
+    db_session.commit()
+
+    resp = client.post("/api/me/hearts/refill")
+    assert resp.status_code == 400
+    assert "gems" in resp.json()["detail"].lower()
+
+
+def test_refill_fails_when_already_full(client):
+    resp = client.post("/api/me/hearts/refill")
+    assert resp.status_code == 400
+    assert "full" in resp.json()["detail"].lower()
+
+
+def test_settings_placeholder(client):
+    body = client.get("/api/settings").json()
+    assert body["coming_soon"] is True
+    assert client.patch("/api/settings").status_code == 200
+
+
 # --- Achievements -----------------------------------------------------------
 
 

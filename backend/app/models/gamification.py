@@ -26,6 +26,8 @@ class Hearts(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
     current_hearts: Mapped[int] = mapped_column(Integer, default=5)
     max_hearts: Mapped[int] = mapped_column(Integer, default=5)
+    # Start of the current 30-minute regen window; NULL while hearts are full.
+    last_refill_at: Mapped[datetime | None] = mapped_column(DateTime)
 
 
 class DailyGoal(Base):
@@ -57,6 +59,19 @@ class Achievement(Base):
     unlocked_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     __table_args__ = (UniqueConstraint("user_id", "key", name="uq_user_key"),)
+
+
+class ChestClaim(Base):
+    """One-time path chest claim (gems) per unit for a user."""
+
+    __tablename__ = "chest_claims"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    unit_id: Mapped[int] = mapped_column(ForeignKey("units.id", ondelete="CASCADE"))
+    claimed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (UniqueConstraint("user_id", "unit_id", name="uq_user_unit_chest"),)
 
 
 class LeaderboardEntry(Base):

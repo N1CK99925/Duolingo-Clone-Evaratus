@@ -5,20 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.models.course import Course, Lesson, Skill, Unit
 from app.models.gamification import Hearts, Streak
-from app.models.user import User, UserProgress
-from app.schemas.path import PathResponse, SkillNode, UnitNode, UserSummary
-
-
-def get_default_user(db: Session) -> User:
-    """Return the default learner (seeded)."""
-    from app.core.config import settings
-
-    user = db.execute(
-        select(User).where(User.username == settings.default_username)
-    ).scalar_one_or_none()
-    if user is None:
-        raise LookupError("Default learner not found. Run seed first.")
-    return user
+from app.models.user import UserProgress
+from app.schemas.path import ChestInfo, PathResponse, SkillNode, UnitNode, UserSummary
+from app.services.chest import CHEST_REWARD, claimed_unit_ids
+from app.services.hearts import regen_hearts
+from app.services.user import get_default_user  # noqa: F401
 
 
 def get_user_summary(db: Session) -> UserSummary:
@@ -26,6 +17,9 @@ def get_user_summary(db: Session) -> UserSummary:
     user = get_default_user(db)
     streak = db.execute(select(Streak).where(Streak.user_id == user.id)).scalar_one_or_none()
     hearts = db.execute(select(Hearts).where(Hearts.user_id == user.id)).scalar_one_or_none()
+    if hearts is not None:
+        regen_hearts(db, hearts)
+        db.commit()
 
     return UserSummary(
         id=user.id,
@@ -75,6 +69,7 @@ def get_path(db: Session, stop_at_incomplete: bool = True) -> PathResponse:
 
     unit_nodes: list[UnitNode] = []
     seen_incomplete = False
+    claimed = claimed_unit_ids(db, user.id)
 
     for unit in units:
         skills = (
@@ -127,6 +122,7 @@ def get_path(db: Session, stop_at_incomplete: bool = True) -> PathResponse:
                 description=unit.description,
                 sort_order=unit.sort_order,
                 skills=skill_nodes,
+                chest=ChestInfo(reward=CHEST_REWARD, claimed=unit.id in claimed),
             )
         )
 

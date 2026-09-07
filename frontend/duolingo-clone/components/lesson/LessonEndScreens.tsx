@@ -1,8 +1,19 @@
 "use client";
 
-import { LessonCompleteResult } from "@/lib/api";
+import { LessonCompleteResult, api } from "@/lib/api";
+import { Confetti } from "@/components/Confetti";
+import { useEffect, useState } from "react";
 
-/** Full-screen lesson-complete celebration: mascot, +XP, stats, continue. */
+/** Small auto-hiding toast (VS5: streak / achievement celebration). */
+function Toast({ message }: { message: string }) {
+  return (
+    <div className="animate-toast-in fixed left-1/2 top-6 z-[60] -translate-x-1/2 rounded-2xl border-2 border-[#E5E5E5] bg-white px-5 py-3 font-extrabold text-[#4B4B4B] shadow-[0_3px_0_#E5E5E5]">
+      {message}
+    </div>
+  );
+}
+
+/** Full-screen lesson-complete celebration: confetti, mascot, +XP, stats, toast. */
 export function LessonCompleteScreen({
   result,
   onContinue,
@@ -10,8 +21,24 @@ export function LessonCompleteScreen({
   result: LessonCompleteResult;
   onContinue: () => void;
 }) {
+  const [toastVisible, setToastVisible] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setToastVisible(false), 3200);
+    return () => clearTimeout(t);
+  }, []);
+
+  const toast =
+    toastVisible
+      ? result.current_streak > 1
+        ? `🔥 ${result.current_streak} day streak!`
+        : "🔥 Streak started!"
+      : null;
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white p-6 text-center">
+      <Confetti />
+      {toast && <Toast message={toast} />}
       <div className="animate-pop flex flex-col items-center">
         <h1 className="text-3xl font-extrabold text-[#FFC800] sm:text-4xl">Lesson complete!</h1>
 
@@ -51,8 +78,20 @@ export function LessonCompleteScreen({
   );
 }
 
-/** Full-screen out-of-hearts failure: sad Duo, back to path. */
+/** Full-screen out-of-hearts failure: sad Duo, refill via gems or practice on the path. */
 export function OutOfHeartsScreen({ onExit }: { onExit: () => void }) {
+  const [state, setState] = useState<"idle" | "refilling" | "refilled" | "error">("idle");
+
+  const refill = async () => {
+    setState("refilling");
+    try {
+      await api.refillHearts();
+      setState("refilled");
+    } catch {
+      setState("error");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white p-6 text-center">
       <div className="animate-pop flex flex-col items-center">
@@ -65,13 +104,32 @@ export function OutOfHeartsScreen({ onExit }: { onExit: () => void }) {
           You ran out of hearts!
         </h1>
         <p className="mt-3 max-w-sm text-[#777777]">
-          Hearts refill over time. Practice an earlier lesson to earn them back.
+          Hearts refill over time (1 every 30 min), or refill instantly with gems.
         </p>
       </div>
 
-      <button className="btn-error mt-10 w-full max-w-sm" onClick={onExit}>
-        Back to path
-      </button>
+      <div className="mt-10 flex w-full max-w-sm flex-col gap-3">
+        {state === "refilled" ? (
+          <div className="rounded-2xl border-2 border-[#58CC02] bg-[#D7FFB8] px-4 py-3 font-extrabold text-[#58A700]">
+            Hearts refilled! ❤️❤️❤️❤️❤️
+          </div>
+        ) : (
+          <button
+            className="btn-gold w-full disabled:opacity-60"
+            onClick={() => void refill()}
+            disabled={state === "refilling"}
+          >
+            {state === "refilling"
+              ? "Refilling…"
+              : state === "error"
+                ? "Not enough gems — try again later"
+                : "Refill for 350 gems 💎"}
+          </button>
+        )}
+        <button className="btn-primary w-full" onClick={onExit}>
+          Practice on the path
+        </button>
+      </div>
     </div>
   );
 }

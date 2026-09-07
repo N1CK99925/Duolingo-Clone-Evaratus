@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     # VS3: Set to True during development to give players unlimited lives.
     infinite_hearts: bool = False
 
+    # Allowed browser origins (comma-separated via DUO_CORS_ORIGINS). The
+    # frontend is hosted separately, so its deployed URL must be listed here.
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+
     model_config = SettingsConfigDict(env_prefix="DUO_", env_file=".env", extra="ignore")
 
 

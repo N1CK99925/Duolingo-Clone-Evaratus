@@ -1,10 +1,8 @@
 """FastAPI application entry point for the Duolingo clone.
 
-Wires together the API routers, seeds the database on startup, and serves the
-static frontend build (if present) via `app.frontend()`.
+Wires together the API routers and seeds the database on startup. The frontend
+is hosted separately, so this app serves the backend API only.
 """
-
-from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,9 +13,6 @@ from app.routers.core import router as core_router
 from app.routers.gamification import router as gamification_router
 from app.routers.lessons import router as lessons_router
 from app.services.seed import run_seed
-
-# Default (development) location of the frontend static build.
-FRONTEND_OUT = Path(__file__).resolve().parent.parent.parent / "frontend" / "duolingo-clone" / "out"
 
 
 def create_app() -> FastAPI:
@@ -33,8 +28,9 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
+            origin.strip()
+            for origin in settings.cors_origins.split(",")
+            if origin.strip()
         ],
         allow_credentials=False,
         allow_methods=["*"],
@@ -44,11 +40,6 @@ def create_app() -> FastAPI:
     app.include_router(core_router)
     app.include_router(gamification_router)
     app.include_router(lessons_router)
-
-
-    # Serve the static frontend build when present (dev: not built yet → skip).
-    if FRONTEND_OUT.is_dir():
-        app.frontend("/", directory=FRONTEND_OUT, fallback="index.html", check_dir=False)
 
     return app
 

@@ -21,6 +21,24 @@ class DailyGoalUpdate(BaseModel):
     target_xp: int = Field(ge=10, le=500)
 
 
+class HeartsStatusResponse(BaseModel):
+    """Heart state for GET /api/me/hearts and refill responses."""
+
+    current_hearts: int
+    max_hearts: int
+    next_refill_at: str | None = None
+    is_out_of_hearts: bool
+
+
+class SettingsResponse(BaseModel):
+    """VS5 placeholder settings payload (no real logic yet)."""
+
+    sound: bool = True
+    motion: bool = True
+    dark_mode: bool = False
+    coming_soon: bool = True
+
+
 class AchievementResponse(BaseModel):
     """Single achievement shown on the profile page."""
 

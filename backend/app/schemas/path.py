@@ -33,6 +33,13 @@ class SkillNode(BaseModel):
     first_lesson_id: int | None = None
 
 
+class ChestInfo(BaseModel):
+    """One-time path chest: gem reward, claimable once per unit."""
+
+    reward: int
+    claimed: bool
+
+
 class UnitNode(BaseModel):
     """A unit banner and its skills."""
 
@@ -41,6 +48,14 @@ class UnitNode(BaseModel):
     description: str | None
     sort_order: int
     skills: list[SkillNode]
+    chest: ChestInfo
+
+
+class ChestClaimResponse(BaseModel):
+    """Result of claiming a path chest."""
+
+    reward: int
+    gems: int
 
 
 class PathResponse(BaseModel):
