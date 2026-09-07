@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { UserSummary } from "@/lib/api";
 import { ArrowIcon, BoltIcon, ChestIcon, ShieldIcon } from "./icons";
 import { HeartsStat } from "./HeartsStat";
@@ -73,10 +74,13 @@ export function RightRail({ user }: { user: UserSummary | null }) {
             </div>
             <ShieldIcon className="h-14 w-14 shrink-0" />
           </div>
-          <button className="mt-3 w-full rounded-xl border-2 border-[#E5E5E5] bg-white py-2.5 text-sm font-bold uppercase tracking-wide text-[#1CB0F6] shadow-[0_3px_0_#E5E5E5] hover:bg-[#F7FDFF] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2">
+          <Link
+            href="/leaderboard"
+            className="mt-3 w-full rounded-xl border-2 border-[#E5E5E5] bg-white py-2.5 text-sm font-bold uppercase tracking-wide text-[#1CB0F6] shadow-[0_3px_0_#E5E5E5] hover:bg-[#F7FDFF] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2"
+          >
             Go to Leaderboards
             <ArrowIcon className="h-5 w-5" />
-          </button>
+          </Link>
         </div>
 
         {/* Daily Quests */}

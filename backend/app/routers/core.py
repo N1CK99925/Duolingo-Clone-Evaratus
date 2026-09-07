@@ -9,6 +9,7 @@ from app.db import get_db
 from app.schemas.path import ChestClaimResponse, HealthResponse, PathResponse, UserSummary
 from app.services import path as path_service
 from app.services.chest import claim_chest
+from app.services.reset import reset_progress
 from app.services.user import get_default_user
 
 router = APIRouter(tags=["core"])
@@ -48,3 +49,10 @@ def claim_chest_endpoint(unit_id: int, db: DbSession) -> ChestClaimResponse:
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return ChestClaimResponse(reward=reward, gems=gems)
+
+
+@router.post("/api/reset", response_model=UserSummary)
+def reset_endpoint(db: DbSession) -> UserSummary:
+    """Reset the default learner's progress, returning their fresh summary."""
+    reset_progress(db)
+    return path_service.get_user_summary(db)

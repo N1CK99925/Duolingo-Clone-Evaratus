@@ -82,6 +82,15 @@ npm run build          # exports a static site to out/
 Host `out/` on any static server/CDN; run the backend API on a server that can reach
 SQLite (or a real DB). Route the frontend origin through CORS as above.
 
+### Run everything with Docker (local)
+
+```bash
+docker compose up --build   # backend API on :8000, static frontend on :3000
+```
+
+Production hosting (Render + Vercel) and the Docker/render files are documented in
+`docs/deployment-plan.md`.
+
 ## Architecture
 
 - **Learning path** — `Course -> Unit (the "section" of the Duolingo path) -> Skill ->
