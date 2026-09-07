@@ -9,10 +9,12 @@ Idempotent: safe to run on every startup. If content already exists, it is
 left untouched (no duplicates introduced).
 """
 
+import json
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.course import Course, Lesson, Skill, Unit
+from app.models.course import Course, Exercise, Lesson, Skill, Unit
 from app.models.gamification import Hearts, Streak
 from app.models.user import User
 
@@ -95,12 +97,6 @@ def _skill_title(skill_data: dict) -> str:
     return skill_data.get("title_en") or skill_data["title"]
 
 
-import json
-
-from app.models.course import Course, Exercise, Lesson, Skill, Unit
-from app.models.gamification import Hearts, Streak
-from app.models.user import User
-
 # Exercise templates for seeded skills
 SKILL_EXERCISES = {
     "अक्षर": [
@@ -126,7 +122,12 @@ SKILL_EXERCISES = {
     "Basics": [
         {
             "prompt": "How do you say 'Hello' in Hindi?",
-            "choices": ["नमस्ते (Namaste)", "शुभ प्रभात (Good morning)", "धन्यवाद (Thank you)", "हाँ (Yes)"],
+            "choices": [
+                "नमस्ते (Namaste)",
+                "शुभ प्रभात (Good morning)",
+                "धन्यवाद (Thank you)",
+                "हाँ (Yes)",
+            ],
             "correct_index": 0,
             "explanation": "'नमस्ते' (Namaste) is the common Hindi greeting.",
         },
@@ -146,7 +147,12 @@ SKILL_EXERCISES = {
     "परिचय": [
         {
             "prompt": "How do you say 'My name is...' in Hindi?",
-            "choices": ["मेरा नाम... है (Mera naam... hai)", "मैं ठीक हूँ (Main theek hoon)", "नमस्ते (Namaste)", "आप कैसे हैं (Aap kaise hain)"],
+            "choices": [
+                "मेरा नाम... है (Mera naam... hai)",
+                "मैं ठीक हूँ (Main theek hoon)",
+                "नमस्ते (Namaste)",
+                "आप कैसे हैं (Aap kaise hain)",
+            ],
             "correct_index": 0,
             "explanation": "'मेरा नाम... है' is used to introduce yourself.",
         },

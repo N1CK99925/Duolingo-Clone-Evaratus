@@ -16,7 +16,6 @@ from app.schemas.lesson import (
     LessonCompleteResponse,
     LessonDetail,
 )
-from app.services.path import get_default_user
 
 
 def get_lesson_detail(db: Session, lesson_id: int) -> LessonDetail:
@@ -185,6 +184,9 @@ def complete_lesson(db: Session, user_id: int, lesson_id: int) -> LessonComplete
         existing_progress.is_completed = 1
         existing_progress.last_practiced = now
         existing_progress.updated_at = now
+
+    db.flush()
+
 
     # Check if skill completed
     total_lessons_in_skill = db.execute(

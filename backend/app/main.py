@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db import SessionLocal, init_db
 from app.routers.core import router as core_router
+from app.routers.lessons import router as lessons_router
 from app.services.seed import run_seed
 
 # Default (development) location of the frontend static build.
@@ -35,11 +36,13 @@ def create_app() -> FastAPI:
             "http://127.0.0.1:3000",
         ],
         allow_credentials=False,
-        allow_methods=["GET"],
-        allow_headers=["Content-Type"],
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     app.include_router(core_router)
+    app.include_router(lessons_router)
+
 
     # Serve the static frontend build when present (dev: not built yet → skip).
     if FRONTEND_OUT.is_dir():
